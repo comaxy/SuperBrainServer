@@ -90,12 +90,18 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Application.cpp" />
+    <ClCompile Include="DbManager.cpp" />
+    <ClCompile Include="DuiManager.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MainWindow.cpp" />
     <ClCompile Include="sqlite\sqlite3.c" />
     <ClCompile Include="StringUtil.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Application.h" />
+    <ClInclude Include="DbManager.h" />
+    <ClInclude Include="DuiManager.h" />
     <ClInclude Include="MainWindow.h" />
     <ClInclude Include="sqlite\sqlite3.h" />
     <ClInclude Include="StringUtil.h" />
