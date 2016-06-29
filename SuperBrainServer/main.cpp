@@ -4,6 +4,7 @@
 #include "UIlib.h"
 #include "MainWindow.h"
 #include "sqlite/sqlite3.h"
+#include "StringUtil.h"
 
 int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
@@ -14,16 +15,10 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	CString resourcePath = exeFilePath.Left(exeFilePath.ReverseFind(TEXT('\\')) + 1) + TEXT("skin\\");
 	DuiLib::CPaintManagerUI::SetResourcePath(static_cast<LPCTSTR>(resourcePath));
 
-	//TCHAR szFileName[MAX_PATH] = { 0 };
-	//GetModuleFileName(NULL, szFileName, MAX_PATH);
-	//TCHAR resourcePath[MAX_PATH] = { 0 };
-	//_tcsncpy_s(resourcePath, MAX_PATH, szFileName, 
-	//	_tcsrchr(szFileName, TEXT('\\')) - szFileName + 1);
-	//_tcscat_s(resourcePath, MAX_PATH, TEXT("skin\\"));
-	//DuiLib::CPaintManagerUI::SetResourcePath(resourcePath);
-
-	// 初始化数据库
-	//sqlite3_open()
+	//// 初始化数据库
+	//CString dbPath = exeFilePath.Left(exeFilePath.ReverseFind(TEXT('\\')) + 1) + TEXT("sb.db");
+	//sqlite3* db = NULL;
+	//sqlite3_open(StringUtil::CStringToUtf8(dbPath).c_str(), &db);
 
 	// 创建主窗口
 	MainWindow mainWindow;

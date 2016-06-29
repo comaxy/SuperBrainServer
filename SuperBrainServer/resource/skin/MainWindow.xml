@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Window xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" size="600,480" mininfo="600,480" caption="0,0,0,40">
+	<VerticalLayout bkcolor="#FFFFFFFF" bkimage="file='pic\border.png' corner='2,2,2,2'">
+	</VerticalLayout>
+</Window>
