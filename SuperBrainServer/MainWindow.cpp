@@ -1,6 +1,12 @@
 #include "MainWindow.h"
+#include "Application.h"
+#include "SessionMgr.h"
 
 #define WM_SOCKET (WM_USER + 1000)
+
+MainWindow::MainWindow() : m_pm(), m_hLstnSock(NULL)
+{
+}
 
 DuiLib::CControlUI* MainWindow::CreateControl(LPCTSTR pstrClass)
 {
@@ -56,11 +62,19 @@ void MainWindow::OnMsgSocket(WPARAM wParam, LPARAM lParam)
 {
 	WORD wsaEvent = WSAGETSELECTEVENT(lParam);
 	WORD wsaError = WSAGETSELECTERROR(lParam);
+	SOCKET hSock = (SOCKET)wParam;
+	if (wsaError)
+	{
+		// handle error
+	}
+
 	switch (wsaEvent)
 	{
 	case FD_ACCEPT:
+		OnMsgSocketAccept(hSock);
 		break;
 	case FD_READ:
+		OnMsgSocketRead(hSock);
 		break;
 	case FD_WRITE:
 		break;
@@ -69,6 +83,38 @@ void MainWindow::OnMsgSocket(WPARAM wParam, LPARAM lParam)
 	default:
 		break;
 	}
+}
+
+void MainWindow::OnMsgSocketAccept(SOCKET sock)
+{
+	if (sock != m_hLstnSock)
+	{
+		return;
+	}
+
+	SOCKADDR_IN pstName;
+	int nLen = sizeof(pstName);
+	SOCKET newSock = accept(sock, (LPSOCKADDR)&pstName, (LPINT)&nLen);
+	if (newSock == SOCKET_ERROR)
+	{
+		return;
+	}
+	else
+	{
+		Application::sharedInstance()->sessionMgr()->newSession(newSock);
+	}
+}
+
+void MainWindow::OnMsgSocketRead(SOCKET sock)
+{
+	std::shared_ptr<Session> session = Application::sharedInstance()->sessionMgr()->findSession(sock);
+	if (!session)
+	{
+		return;
+	}
+
+	session->setState(Session::READING);
+	session->read();
 }
 
 bool MainWindow::OnNotifyWindowInit()

@@ -27,6 +27,15 @@
     <ClCompile Include="StringUtil.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Application.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DbManager.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DuiManager.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MainWindow.h">
@@ -36,6 +45,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="StringUtil.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Application.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DbManager.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DuiManager.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

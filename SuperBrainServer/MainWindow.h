@@ -7,6 +7,7 @@ class MainWindow
 	, public DuiLib::IDialogBuilderCallback
 {
 public:
+	MainWindow();
 	virtual void Notify(DuiLib::TNotifyUI& msg) override;
 	virtual DuiLib::CControlUI* CreateControl(LPCTSTR pstrClass) override;
 
@@ -17,10 +18,13 @@ protected:
 private:
 	void OnMsgCreate(WPARAM wParam, LPARAM lParam);
 	void OnMsgSocket(WPARAM wParam, LPARAM lParam);
+	void OnMsgSocketAccept(SOCKET sock);
+	void OnMsgSocketRead(SOCKET sock);
 
 private:
 	bool OnNotifyWindowInit();
 
 private:
 	DuiLib::CPaintManagerUI m_pm;
+	SOCKET m_hLstnSock;
 };

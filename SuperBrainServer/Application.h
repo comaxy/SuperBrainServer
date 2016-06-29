@@ -4,6 +4,7 @@
 class DuiManager;
 class DbManager;
 class MainWindow;
+class SessionMgr;
 
 class Application
 {
@@ -19,6 +20,8 @@ public:
 	void setMainWindow(std::shared_ptr<MainWindow> mainWindow) { m_mainWindow = mainWindow; }
 	std::shared_ptr<MainWindow> mainWindow() const { return m_mainWindow; }
 
+	std::shared_ptr<SessionMgr> sessionMgr() const { return m_sessionMgr; }
+
 private:
 	Application();
 
@@ -30,4 +33,5 @@ private:
 	std::shared_ptr<DuiManager> m_duiManager;
 	std::shared_ptr<DbManager> m_dbManager;
 	std::shared_ptr<MainWindow> m_mainWindow;
+	std::shared_ptr<SessionMgr> m_sessionMgr;
 };

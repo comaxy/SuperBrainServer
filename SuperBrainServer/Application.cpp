@@ -2,6 +2,7 @@
 #include "DuiManager.h"
 #include "DbManager.h"
 #include "MainWindow.h"
+#include "SessionMgr.h"
 #include <Windows.h>
 
 std::shared_ptr<Application> Application::s_instance;
@@ -11,6 +12,7 @@ Application::Application()
 	, m_duiManager(new DuiManager())
 	, m_dbManager(new DbManager())
 	, m_mainWindow(nullptr)
+	, m_sessionMgr(new SessionMgr())
 {
 }
 
