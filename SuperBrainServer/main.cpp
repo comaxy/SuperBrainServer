@@ -1,19 +1,29 @@
 #include <Windows.h>
 #include <WinSock.h>
+#include <atlstr.h>
 #include "UIlib.h"
 #include "MainWindow.h"
+#include "sqlite/sqlite3.h"
 
 int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	// 初始化 DuiLib
 	DuiLib::CPaintManagerUI::SetInstance(hInstance);
-	TCHAR szFileName[MAX_PATH] = { 0 };
-	GetModuleFileName(NULL, szFileName, MAX_PATH);
-	TCHAR resourcePath[MAX_PATH] = { 0 };
-	_tcsncpy_s(resourcePath, MAX_PATH, szFileName, 
-		_tcsrchr(szFileName, TEXT('\\')) - szFileName + 1);
-	_tcscat_s(resourcePath, MAX_PATH, TEXT("skin\\"));
-	DuiLib::CPaintManagerUI::SetResourcePath(resourcePath);
+	CString exeFilePath;
+	GetModuleFileName(NULL, exeFilePath.GetBufferSetLength(MAX_PATH), MAX_PATH);
+	CString resourcePath = exeFilePath.Left(exeFilePath.ReverseFind(TEXT('\\')) + 1) + TEXT("skin\\");
+	DuiLib::CPaintManagerUI::SetResourcePath(static_cast<LPCTSTR>(resourcePath));
+
+	//TCHAR szFileName[MAX_PATH] = { 0 };
+	//GetModuleFileName(NULL, szFileName, MAX_PATH);
+	//TCHAR resourcePath[MAX_PATH] = { 0 };
+	//_tcsncpy_s(resourcePath, MAX_PATH, szFileName, 
+	//	_tcsrchr(szFileName, TEXT('\\')) - szFileName + 1);
+	//_tcscat_s(resourcePath, MAX_PATH, TEXT("skin\\"));
+	//DuiLib::CPaintManagerUI::SetResourcePath(resourcePath);
+
+	// 初始化数据库
+	//sqlite3_open()
 
 	// 创建主窗口
 	MainWindow mainWindow;
