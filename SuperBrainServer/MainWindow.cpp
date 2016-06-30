@@ -93,7 +93,7 @@ void MainWindow::OnMsgSocket(WPARAM wParam, LPARAM lParam)
 void MainWindow::OnMsgSocketAccept(SOCKET sock)
 {
 	appLogger()->trace("Handle accept event on socket: ", sock);
-	if (sock == m_hLstnSock)
+	if (sock != m_hLstnSock)
 	{
 		appLogger()->error("Only listen socket should accept connection. Ignore.");
 		return;

@@ -24,6 +24,7 @@ public:
 	std::shared_ptr<MainWindow> mainWindow() const { return m_mainWindow; }
 	std::shared_ptr<SessionMgr> sessionMgr() const { return m_sessionMgr; }
 	std::shared_ptr<Logger> logger() const { return m_logger; }
+	std::shared_ptr<DbManager> dbManager() const { return m_dbManager; }
 
 private:
 	Application();

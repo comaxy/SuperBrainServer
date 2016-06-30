@@ -1,6 +1,9 @@
 #include "SessionMgr.h"
 #include "StringUtil.h"
 #include "LoggerDef.h"
+#include "SockEventDef.h"
+#include "Application.h"
+#include "DbManager.h"
 #include <atlstr.h>
 
 void SocketReader::read()
@@ -69,12 +72,46 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 {
 	switch (eventId)
 	{
-	case 1:
+	case REGISTER:
 		{
-			
+			std::string utf8Str(body.first, body.second);
+			CString playerInfo = StringUtil::Utf8ToCString(utf8Str);
+			int seperatorPos = playerInfo.Find(TEXT(';'));
+			CString playerName = playerInfo.Left(seperatorPos);
+			CString password = playerInfo.Mid(seperatorPos + 1);
+			std::string playerNameMb = StringUtil::CStringToMultiByte(playerName);
+			appLogger()->trace("Handle socket ", m_sock, " register event. ",
+				"Player name: ", playerNameMb.c_str());
+			if (playerName.IsEmpty())
+			{
+				appLogger()->trace("Error: Player name for register is empty! Socket: ", m_sock);
+				return;
+			}
+			if (password.IsEmpty())
+			{
+				appLogger()->trace("Error: Player password for register is empty! Socket: ", m_sock);
+				return;
+			}
+
+			auto query = Application::sharedInstance()->dbManager()->sqlite()->makeQuery();
+			query->prepare("SELECT * FROM player WHERE name=:name");
+			query->bindValue(TEXT(":name"), playerName);
+			query->exec();
+			if (query->next())
+			{
+				appLogger()->trace("Register failed! Player named ", playerNameMb.c_str(), " has already exists. Socket: ", m_sock);
+			}
+			else
+			{
+				query->prepare("INSERT INTO player(name,password) VALUES(:name,:password)");
+				query->bindValue(TEXT(":name"), playerName);
+				query->bindValue(TEXT(":password"), password);
+				query->exec();
+				appLogger()->trace("Register succeeded! Socket: ", m_sock);
+			}
 		}
 		break;
-	case 2:
+	case LOGIN:
 		{
 			std::string utf8Str(body.first, body.second);
 			CString playerInfo = StringUtil::Utf8ToCString(utf8Str);
