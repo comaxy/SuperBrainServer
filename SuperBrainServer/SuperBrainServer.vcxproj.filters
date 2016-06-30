@@ -36,6 +36,12 @@
     <ClCompile Include="DuiManager.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="SessionMgr.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Logger.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MainWindow.h">
@@ -56,10 +62,22 @@
     <ClInclude Include="DuiManager.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="SessionMgr.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Logger.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="LoggerDef.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="resource\skin\MainWindow.xml">
       <Filter>资源文件</Filter>
     </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="log.properties" />
   </ItemGroup>
 </Project>

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <winsock.h>
 #include <memory>
 #include <map>
@@ -20,7 +22,7 @@ class SocketReader
 public:
 	SocketReader(SOCKET sock) 
 		: m_sock(sock), m_state(READING_HEADER)
-		, m_header(), m_body(0), m_bodySize(0) 
+		, m_body(0), m_bodySize(0)
 		, m_readPos(nullptr)
 		, m_remainSize(0)
 		, m_delegate(nullptr)

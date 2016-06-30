@@ -1,5 +1,6 @@
 #include "DbManager.h"
 #include "StringUtil.h"
+#include "LoggerDef.h"
 #include "sqlite/sqlite3.h"
 #include <atlstr.h>
 
@@ -10,32 +11,51 @@ Sqlite::Sqlite()
 
 Sqlite::~Sqlite()
 {
+	appLogger()->trace("Destroying sqlite3 DB object.");
 	close();
+	appLogger()->trace("Sqlite3 DB object has been destroyed.");
 }
 
 void Sqlite::close()
 {
 	if (m_connection)
 	{
+		appLogger()->trace("Closing sqlite3 DB.");
+
 		sqlite3_close(m_connection);
 		m_connection = nullptr;
+
+		appLogger()->trace("Close sqlite3 DB done.");
+	}
+	else
+	{
+		appLogger()->trace("There is no need to close sqlite3 DB, it has been already closed.");
 	}
 }
 
 bool Sqlite::initialize(const std::string& path)
 {
+	appLogger()->trace("Initializing sqlite3 DB.");
+
 	int ret = sqlite3_open(path.c_str(), &m_connection);
 	if (ret != SQLITE_OK)
 	{
+		appLogger()->fatal("Open sqlite3_open failed! Error:", ret);
 		return false;
 	}
+
+	appLogger()->trace("Initialize sqlite3 DB succeeded.");
 
 	return true;
 }
 
 void Sqlite::uninitialize()
 {
+	appLogger()->trace("Uninitializing sqlite3 DB.");
+
 	close();
+
+	appLogger()->trace("Uninitialize sqlite3 DB done.");
 }
 
 std::shared_ptr<SqliteQuery> Sqlite::makeQuery()
@@ -220,11 +240,14 @@ Variant SqliteQuery::value(unsigned int i)
 
 bool DbManager::initialize()
 {
+	appLogger()->trace("Initializing DB manager.");
+
 	CString exeFilePath;
 	GetModuleFileName(NULL, exeFilePath.GetBufferSetLength(MAX_PATH), MAX_PATH);
 	CString dbPath = exeFilePath.Left(exeFilePath.ReverseFind(TEXT('\\')) + 1) + TEXT("sb.db");
 	if (!m_sqlite->initialize(StringUtil::CStringToUtf8(dbPath)))
 	{
+		appLogger()->fatal("Initialize sqlite3 DB failed!");
 		return false;
 	}
 
@@ -239,11 +262,17 @@ bool DbManager::initialize()
 		")"));
 	if (!ok)
 	{
+		appLogger()->fatal("Create DB table player failed!");
 		return false;
 	}
+
+	appLogger()->trace("Initialize DB manager succeeded.");
+	return true;
 }
 
 void DbManager::uninitialize()
 {
+	appLogger()->trace("Uninitializing DB manager.");
 	m_sqlite->uninitialize();
+	appLogger()->trace("Uninitialize DB manager done.");
 }

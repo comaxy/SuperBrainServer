@@ -1,3 +1,5 @@
+#pragma once
+
 #include "sqlite/sqlite3.h"
 #include <atlstr.h>
 #include <memory>

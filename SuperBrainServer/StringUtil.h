@@ -1,3 +1,5 @@
+#pragma once
+
 #include <atlstr.h>
 #include <string>
 

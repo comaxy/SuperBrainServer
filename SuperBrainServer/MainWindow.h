@@ -1,5 +1,6 @@
-#include "UIlib.h"
+#pragma once
 
+#include "UIlib.h"
 
 class MainWindow 
 	: public DuiLib::CWindowWnd

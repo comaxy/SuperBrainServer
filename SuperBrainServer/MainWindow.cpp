@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 #include "Application.h"
 #include "SessionMgr.h"
+#include "LoggerDef.h"
 
 #define WM_SOCKET (WM_USER + 1000)
 
@@ -89,6 +90,7 @@ void MainWindow::OnMsgSocketAccept(SOCKET sock)
 {
 	if (sock != m_hLstnSock)
 	{
+		appLogger()->error("Only listen socket should accept connection.");
 		return;
 	}
 
@@ -97,10 +99,12 @@ void MainWindow::OnMsgSocketAccept(SOCKET sock)
 	SOCKET newSock = accept(sock, (LPSOCKADDR)&pstName, (LPINT)&nLen);
 	if (newSock == SOCKET_ERROR)
 	{
+		appLogger()->error("Accept incoming socket failed!");
 		return;
 	}
 	else
 	{
+		appLogger()->trace("New socket accepted. Socket:", newSock);
 		Application::sharedInstance()->sessionMgr()->newSession(newSock);
 	}
 }
@@ -110,6 +114,7 @@ void MainWindow::OnMsgSocketRead(SOCKET sock)
 	std::shared_ptr<Session> session = Application::sharedInstance()->sessionMgr()->findSession(sock);
 	if (!session)
 	{
+		appLogger()->error("Can not find the socket for read.");
 		return;
 	}
 
