@@ -63,7 +63,7 @@
     </Link>
     <PostBuildEvent>
       <Command>xcopy $(ProjectDir)resource\skin  $(SolutionDir)$(Configuration)\skin\  /E /Y /F /R
-xcopy $(ProjectDir)libs\log4cplus\bin\log4cplusUD.dll  $(SolutionDir)$(Configuration)\ /Y /F /R
+xcopy $(ProjectDir)libs\log4cplus\lib\log4cplusUD.dll  $(SolutionDir)$(Configuration)\ /Y /F /R
 xcopy $(ProjectDir)log.properties  $(SolutionDir)$(Configuration)\ /Y /F /R</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -89,7 +89,7 @@ xcopy $(ProjectDir)log.properties  $(SolutionDir)$(Configuration)\ /Y /F /R</Com
     </Link>
     <PostBuildEvent>
       <Command>xcopy $(ProjectDir)resource\skin  $(SolutionDir)$(Configuration)\skin\  /E /Y /F /R
-xcopy $(ProjectDir)libs\log4cplus\bin\log4cplusU.dll  $(SolutionDir)$(Configuration)\ /Y /F /R
+xcopy $(ProjectDir)libs\log4cplus\lib\log4cplusU.dll  $(SolutionDir)$(Configuration)\ /Y /F /R
 xcopy $(ProjectDir)log.properties  $(SolutionDir)$(Configuration)\ /Y /F /R</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
