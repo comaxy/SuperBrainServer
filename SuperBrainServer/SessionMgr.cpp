@@ -34,7 +34,7 @@ void SocketReader::read()
 				m_state = READ_DONE;
 				if (m_delegate)
 				{
-					m_delegate->readDone(*(UINT8*)&m_body[0], std::make_pair(m_body, m_bodySize));
+					m_delegate->readDone(*(UINT8*)&m_header[0], std::make_pair(m_body, m_bodySize));
 				}
 			}
 			else
@@ -77,9 +77,16 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 	}
 }
 
+bool Session::initialize()
+{
+	m_reader.setDelegate(this);
+	return true;
+}
+
 std::shared_ptr<Session> SessionMgr::newSession(SOCKET sock)
 {
 	m_sessions[sock] = std::make_shared<Session>(sock);
+	m_sessions[sock]->initialize();
 	return m_sessions[sock];
 }
 

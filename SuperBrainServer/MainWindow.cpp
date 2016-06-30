@@ -88,7 +88,7 @@ void MainWindow::OnMsgSocket(WPARAM wParam, LPARAM lParam)
 
 void MainWindow::OnMsgSocketAccept(SOCKET sock)
 {
-	if (sock != m_hLstnSock)
+	if (sock == m_hLstnSock)
 	{
 		appLogger()->error("Only listen socket should accept connection.");
 		return;

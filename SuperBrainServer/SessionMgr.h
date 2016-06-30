@@ -70,6 +70,7 @@ public:
 
 public:
 	Session(SOCKET sock) : m_sock(sock), m_state(READY), m_reader(sock) {}
+	bool initialize();
 	void setState(State state) { m_state = state; }
 	void read();
 
