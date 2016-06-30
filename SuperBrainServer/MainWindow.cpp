@@ -22,6 +22,9 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		OnMsgCreate(wParam, lParam);
 		break;
 	case WM_DESTROY:
+		appLogger()->trace("Closing listen socket: ", m_hLstnSock);
+		closesocket(m_hLstnSock);
+		appLogger()->trace("Listen socket:", m_hLstnSock, " has been closed.");
 		WSACleanup();
 		PostQuitMessage(0);
 		break;
@@ -80,6 +83,7 @@ void MainWindow::OnMsgSocket(WPARAM wParam, LPARAM lParam)
 	case FD_WRITE:
 		break;
 	case FD_CLOSE:
+		OnMsgSocketClose(hSock);
 		break;
 	default:
 		break;
@@ -88,9 +92,10 @@ void MainWindow::OnMsgSocket(WPARAM wParam, LPARAM lParam)
 
 void MainWindow::OnMsgSocketAccept(SOCKET sock)
 {
+	appLogger()->trace("Handle accept event on socket: ", sock);
 	if (sock == m_hLstnSock)
 	{
-		appLogger()->error("Only listen socket should accept connection.");
+		appLogger()->error("Only listen socket should accept connection. Ignore.");
 		return;
 	}
 
@@ -111,10 +116,11 @@ void MainWindow::OnMsgSocketAccept(SOCKET sock)
 
 void MainWindow::OnMsgSocketRead(SOCKET sock)
 {
+	appLogger()->trace("Handle read event on socket: ", sock);
 	std::shared_ptr<Session> session = Application::sharedInstance()->sessionMgr()->findSession(sock);
 	if (!session)
 	{
-		appLogger()->error("Can not find the socket for read.");
+		appLogger()->error("Can not find the session for socket ", sock, " for read.");
 		return;
 	}
 
@@ -122,22 +128,33 @@ void MainWindow::OnMsgSocketRead(SOCKET sock)
 	session->read();
 }
 
+void MainWindow::OnMsgSocketClose(SOCKET sock)
+{
+	appLogger()->trace("Handle close event on socket: ", sock);
+	Application::sharedInstance()->sessionMgr()->destorySession(sock);
+}
+
 bool MainWindow::OnNotifyWindowInit()
 {
 	WSADATA wsaData = { 0 };
 	if (0 != WSAStartup(MAKEWORD(2, 2), &wsaData))
 	{
+		appLogger()->fatal("WSAStartup failed!");
 		return false;
 	}
 
 	SOCKET hLstnSock = socket(AF_INET, SOCK_STREAM, 0);
 	if (hLstnSock == INVALID_SOCKET)
 	{
+		appLogger()->fatal("Create listen socket failed!");
 		return false;
 	}
 
+	appLogger()->trace("Create listen socket succeeded! Socket: ", hLstnSock);
+
 	if (SOCKET_ERROR == WSAAsyncSelect(hLstnSock, m_hWnd, WM_SOCKET, FD_ACCEPT | FD_READ | FD_WRITE | FD_CLOSE))
 	{
+		appLogger()->fatal("WSAAsyncSelect failed!");
 		return false;
 	}
 
@@ -146,13 +163,17 @@ bool MainWindow::OnNotifyWindowInit()
 	pstSockName.sin_port = htons(7062);
 	if (SOCKET_ERROR == bind(hLstnSock, (LPSOCKADDR)&pstSockName, sizeof(pstSockName)))
 	{
+		appLogger()->fatal("Bind listen socket failed!");
 		return false;
 	}
 
 	if (SOCKET_ERROR == listen(hLstnSock, 5))
 	{
+		appLogger()->fatal("Listen on listen socket failed!");
 		return false;
 	}
+
+	m_hLstnSock = hLstnSock;
 
 	return true;
 }

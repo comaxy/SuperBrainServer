@@ -35,7 +35,7 @@ bool Application::initialize()
 		return false;
 	}
 
-	appLogger()->trace("\r\n=========== SUPER BRAIN SERVER ===========");
+	appLogger()->trace("=========== SUPER BRAIN SERVER ===========");
 	appLogger()->trace("Initializing application.");
 
 	if (!m_duiManager->initialize(m_hInstance))

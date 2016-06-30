@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atlstr.h>
 #include <winsock.h>
 #include <memory>
 #include <map>
@@ -69,9 +70,9 @@ public:
 	};
 
 public:
-	Session(SOCKET sock) : m_sock(sock), m_state(READY), m_reader(sock) {}
+	Session(SOCKET sock) : m_sock(sock), m_state(READY), m_reader(sock), m_playerName() {}
 	bool initialize();
-	void setState(State state) { m_state = state; }
+	void setState(State state) { if (m_state != state) m_state = state; }
 	void read();
 
 	virtual void readDone(UINT8 eventId, const std::pair<char*, UINT16>& body) override;
@@ -80,6 +81,7 @@ private:
 	SOCKET m_sock;
 	State m_state;
 	SocketReader m_reader;
+	CString m_playerName;
 };
 
 class SessionMgr
@@ -87,6 +89,7 @@ class SessionMgr
 public:
 	std::shared_ptr<Session> newSession(SOCKET sock);
 	std::shared_ptr<Session> findSession(SOCKET sock);
+	void destorySession(SOCKET sock);
 
 private:
 	std::map<SOCKET, std::shared_ptr<Session>> m_sessions;

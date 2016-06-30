@@ -46,3 +46,32 @@ std::string StringUtil::CStringToUtf8(const CString& cstr)
 	return result;
 #endif
 }
+
+CString StringUtil::multiByteToCString(const std::string& mbstr)
+{
+#ifdef _UNICODE
+	int nLengthResult = MultiByteToWideChar(CP_ACP, 0, mbstr.c_str(), mbstr.length(), NULL, 0);
+	WCHAR *bufResult = new WCHAR[nLengthResult]();
+	MultiByteToWideChar(CP_ACP, 0, mbstr.c_str(), mbstr.length(), bufResult, nLengthResult);
+	CString strResult(bufResult, nLengthResult);
+	delete[] bufResult; bufResult = 0;
+	return strResult;
+#else
+	return CString(mbstr.c_str());
+#endif
+}
+
+std::string StringUtil::CStringToMultiByte(const CString& cstr)
+{
+#ifdef _UNICODE
+	int nBufSizeMb = WideCharToMultiByte(CP_ACP, 0, cstr, cstr.GetLength(), NULL, 0, NULL, NULL);
+	CHAR *pBufMb = new CHAR[nBufSizeMb];
+	memset(pBufMb, 0, nBufSizeMb);
+	WideCharToMultiByte(CP_ACP, 0, cstr, cstr.GetLength(), pBufMb, nBufSizeMb, NULL, NULL);
+	std::string result(pBufMb, nBufSizeMb);
+	delete[] pBufMb; pBufMb = NULL;
+	return result;
+#else
+	return std::string(cstr.GetBuffer(), cstr.GetLength());
+#endif
+}

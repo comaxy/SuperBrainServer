@@ -1,5 +1,6 @@
 #include "SessionMgr.h"
 #include "StringUtil.h"
+#include "LoggerDef.h"
 #include <atlstr.h>
 
 void SocketReader::read()
@@ -8,6 +9,7 @@ void SocketReader::read()
 	{
 	case READING_HEADER:
 		{
+			appLogger()->trace("Socket ", m_sock, " reading header.");
 			int recvSize = recv(m_sock, m_readPos, m_remainSize, 0);
 			m_remainSize -= recvSize;
 			if (m_remainSize == 0)
@@ -17,6 +19,8 @@ void SocketReader::read()
 				m_body = new char[m_bodySize]();
 				m_readPos = m_body;
 				m_remainSize = m_bodySize;
+
+				appLogger()->trace("Socket ", m_sock, " read header done.");
 			}
 			else
 			{
@@ -27,11 +31,16 @@ void SocketReader::read()
 		break;
 	case READING_BODY:
 		{
+			appLogger()->trace("Socket ", m_sock, " reading body.");
 			int recvSize = recv(m_sock, m_readPos, m_remainSize, 0);
 			m_remainSize -= recvSize;
 			if (m_remainSize == 0)
 			{
 				m_state = READ_DONE;
+				appLogger()->trace("Socket ", m_sock, " read body done.");
+				appLogger()->trace("=============== EVENT RECEIVED DONE ===============");
+				appLogger()->trace("Event Id: ", *(UINT8*)&m_header[0], ", Body Length: ", m_bodySize);
+				appLogger()->trace("===================================================");
 				if (m_delegate)
 				{
 					m_delegate->readDone(*(UINT8*)&m_header[0], std::make_pair(m_body, m_bodySize));
@@ -68,8 +77,24 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 	case 2:
 		{
 			std::string utf8Str(body.first, body.second);
-			CString userInfo = StringUtil::Utf8ToCString(utf8Str);
-			OutputDebugString(userInfo);
+			CString playerInfo = StringUtil::Utf8ToCString(utf8Str);
+			int seperatorPos = playerInfo.Find(TEXT(';'));
+			CString playerName = playerInfo.Left(seperatorPos);
+			CString password = playerInfo.Mid(seperatorPos + 1);
+			std::string playerNameMb = StringUtil::CStringToMultiByte(playerName);
+			appLogger()->trace("Handle socket ", m_sock, " login event. ", 
+				"Player name: ", playerNameMb.c_str());
+			if (playerName.IsEmpty())
+			{
+				appLogger()->trace("Error: Player name for login is empty! Socket: ", m_sock);
+				return;
+			}
+			if (password.IsEmpty())
+			{
+				appLogger()->trace("Error: Player password for login is empty! Socket: ", m_sock);
+				return;
+			}
+			m_playerName = playerName;
 		}
 		break;
 	default:
@@ -85,12 +110,37 @@ bool Session::initialize()
 
 std::shared_ptr<Session> SessionMgr::newSession(SOCKET sock)
 {
+	appLogger()->trace("Creating new session for socket: ", sock);
 	m_sessions[sock] = std::make_shared<Session>(sock);
 	m_sessions[sock]->initialize();
+	appLogger()->trace("New session for socket ", sock, " has been created.", " Now session count is: ", m_sessions.size());
 	return m_sessions[sock];
 }
 
 std::shared_ptr<Session> SessionMgr::findSession(SOCKET sock)
 {
-	return m_sessions[sock];
+	appLogger()->trace("Finding session for socket: ", sock);
+	auto iter = m_sessions.find(sock);
+	if (iter == m_sessions.end())
+	{
+		appLogger()->error("Can not find session for socket: ", sock);
+		return nullptr;
+	}
+	appLogger()->trace("Session for socket: ", sock, " has been found.");
+	return iter->second;
+}
+
+void SessionMgr::destorySession(SOCKET sock)
+{
+	appLogger()->trace("Destorying session for socket: ", sock);
+	auto iter = m_sessions.find(sock);
+	if (iter != m_sessions.end())
+	{
+		m_sessions.erase(iter);
+		appLogger()->trace("Session for socket: ", sock, " has been destoryed.", " Now session count is: ", m_sessions.size());
+	}
+	else
+	{
+		appLogger()->error("Destory session for socket: ", sock, " failed! Reason: Can not find the session.");
+	}
 }
