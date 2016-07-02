@@ -21,6 +21,7 @@ private:
 	void OnMsgSocket(WPARAM wParam, LPARAM lParam);
 	void OnMsgSocketAccept(SOCKET sock);
 	void OnMsgSocketRead(SOCKET sock);
+	void OnMsgSocketWrite(SOCKET sock);
 	void OnMsgSocketClose(SOCKET sock);
 
 private:

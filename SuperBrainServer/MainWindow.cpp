@@ -81,6 +81,7 @@ void MainWindow::OnMsgSocket(WPARAM wParam, LPARAM lParam)
 		OnMsgSocketRead(hSock);
 		break;
 	case FD_WRITE:
+		OnMsgSocketWrite(hSock);
 		break;
 	case FD_CLOSE:
 		OnMsgSocketClose(hSock);
@@ -124,8 +125,19 @@ void MainWindow::OnMsgSocketRead(SOCKET sock)
 		return;
 	}
 
-	session->setState(Session::READING);
 	session->read();
+}
+
+void MainWindow::OnMsgSocketWrite(SOCKET sock)
+{
+	appLogger()->trace("Handle write event on socket: ", sock);
+	std::shared_ptr<Session> session = Application::sharedInstance()->sessionMgr()->findSession(sock);
+	if (!session)
+	{
+		appLogger()->error("Can not find the session for socket ", sock, " for write.");
+	}
+
+	session->write();
 }
 
 void MainWindow::OnMsgSocketClose(SOCKET sock)

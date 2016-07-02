@@ -59,28 +59,69 @@ private:
 	SocketReaderDelegate* m_delegate;
 };
 
-class Session : public SocketReaderDelegate
+class SocketWriter
 {
 public:
 	enum State
 	{
-		READY,
-		READING,
 		WRITING,
+		READY,
 	};
 
 public:
-	Session(SOCKET sock) : m_sock(sock), m_state(READY), m_reader(sock), m_playerName() {}
+	SocketWriter(SOCKET sock)
+		: m_sock(sock), m_buf(nullptr), m_size(0), m_writePos(nullptr), m_remainSize(0), m_state(READY)
+	{
+	}
+
+	~SocketWriter()
+	{
+		clear();
+	}
+
+	void clear()
+	{
+		if (m_buf)
+		{
+			delete[] m_buf;
+			m_buf = nullptr;
+		}
+		m_size = 0;
+		m_remainSize = 0;
+		m_writePos = nullptr;
+	}
+
+	void appendWriteBuffer(char* buf, int size);
+	void write();
+	State state() const { return m_state; }
+
+private:
+	SOCKET m_sock;
+	char* m_buf;
+	int m_size;
+	char* m_writePos;
+	int m_remainSize;
+	State m_state;
+};
+
+class Session : public SocketReaderDelegate
+{
+public:
+	Session(SOCKET sock) : m_sock(sock), m_reader(sock), m_writer(sock), m_playerName() {}
 	bool initialize();
-	void setState(State state) { if (m_state != state) m_state = state; }
 	void read();
+	void write();
 
 	virtual void readDone(UINT8 eventId, const std::pair<char*, UINT16>& body) override;
 
 private:
+	void replyRegister(const CString& body);
+	void replyLogin(const CString& body);
+
+private:
 	SOCKET m_sock;
-	State m_state;
 	SocketReader m_reader;
+	SocketWriter m_writer;
 	CString m_playerName;
 };
 

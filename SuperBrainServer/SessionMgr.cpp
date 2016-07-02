@@ -63,9 +63,51 @@ void SocketReader::read()
 	}
 }
 
+void SocketWriter::appendWriteBuffer(char* buf, int size)
+{
+	if (m_buf == nullptr)
+	{
+		m_buf = buf;
+		m_size = size;
+		m_remainSize = size;
+		m_writePos = buf;
+		return;
+	}
+	char* newBuf = new char[m_remainSize + size]();
+	memcpy(newBuf, m_writePos, m_remainSize);
+	memcpy(newBuf + m_remainSize, buf, size);
+	clear();
+	m_buf = newBuf;
+	m_size = m_remainSize + size;
+	m_remainSize = m_remainSize + size;
+	m_writePos = newBuf;
+}
+
+void SocketWriter::write()
+{
+	if (m_remainSize == 0)
+	{
+		return;
+	}
+	m_state = WRITING;
+	int sentSize = send(m_sock, m_writePos, m_remainSize, 0);
+	m_writePos += sentSize;
+	m_remainSize -= sentSize;
+	if (m_remainSize == 0)
+	{
+		clear();
+		m_state = READY;
+	}
+}
+
 void Session::read()
 {
 	m_reader.read();
+}
+
+void Session::write()
+{
+	m_writer.write();
 }
 
 void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
@@ -100,6 +142,7 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 			if (query->next())
 			{
 				appLogger()->trace("Register failed! Player named ", playerNameMb.c_str(), " has already exists. Socket: ", m_sock);
+				replyRegister(TEXT("2;用户名已经存在！"));
 			}
 			else
 			{
@@ -108,6 +151,7 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 				query->bindValue(TEXT(":password"), password);
 				query->exec();
 				appLogger()->trace("Register succeeded! Socket: ", m_sock);
+				replyRegister(TEXT("1;OK"));
 			}
 		}
 		break;
@@ -124,14 +168,27 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 			if (playerName.IsEmpty())
 			{
 				appLogger()->trace("Error: Player name for login is empty! Socket: ", m_sock);
+				replyLogin(TEXT("2;用户名不能为空！"));
 				return;
 			}
 			if (password.IsEmpty())
 			{
 				appLogger()->trace("Error: Player password for login is empty! Socket: ", m_sock);
+				replyLogin(TEXT("2;密码不能为空！"));
+				return;
+			}
+			auto query = Application::sharedInstance()->dbManager()->sqlite()->makeQuery();
+			query->prepare("SELECT * FROM player WHERE name=:name");
+			query->bindValue(TEXT(":name"), playerName);
+			query->exec();
+			if (!query->next())
+			{
+				appLogger()->trace("Error: Player named:", playerNameMb.c_str(), " not exists in DB! Socket: ", m_sock);
+				replyLogin(TEXT("2;用户名或密码错误！"));
 				return;
 			}
 			m_playerName = playerName;
+			replyLogin(TEXT("1;OK"));
 		}
 		break;
 	default:
@@ -143,6 +200,40 @@ bool Session::initialize()
 {
 	m_reader.setDelegate(this);
 	return true;
+}
+
+void Session::replyRegister(const CString& body)
+{
+	std::string bodyUtf8 = StringUtil::CStringToUtf8(body);
+	int bufSize = 3 + bodyUtf8.size();
+	char* buf = new char[bufSize]();
+	UINT8 eventId = REG_RESULT;
+	UINT16 bodyLength = bodyUtf8.size();
+	memcpy(buf, (char*)&eventId, 1);
+	memcpy(buf, (char*)&bodyLength, 2);
+	memcpy(buf, bodyUtf8.c_str(), bodyUtf8.size());
+	m_writer.appendWriteBuffer(buf, bufSize);
+	if (m_writer.state() == SocketWriter::READY)
+	{
+		m_writer.write();
+	}
+}
+
+void Session::replyLogin(const CString& body)
+{
+	std::string bodyUtf8 = StringUtil::CStringToUtf8(body);
+	int bufSize = 3 + bodyUtf8.size();
+	char* buf = new char[bufSize]();
+	UINT8 eventId = LOGIN_RESULT;
+	UINT16 bodyLength = bodyUtf8.size();
+	memcpy(buf, (char*)&eventId, 1);
+	memcpy(buf, (char*)&bodyLength, 2);
+	memcpy(buf, bodyUtf8.c_str(), bodyUtf8.size());
+	m_writer.appendWriteBuffer(buf, bufSize);
+	if (m_writer.state() == SocketWriter::READY)
+	{
+		m_writer.write();
+	}
 }
 
 std::shared_ptr<Session> SessionMgr::newSession(SOCKET sock)
