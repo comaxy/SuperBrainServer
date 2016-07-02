@@ -71,6 +71,7 @@ void SocketWriter::appendWriteBuffer(char* buf, int size)
 		m_size = size;
 		m_remainSize = size;
 		m_writePos = buf;
+		appLogger()->trace("Assign ", size, " bytes to writting buffer of socket: ", m_sock);
 		return;
 	}
 	char* newBuf = new char[m_remainSize + size]();
@@ -81,18 +82,21 @@ void SocketWriter::appendWriteBuffer(char* buf, int size)
 	m_size = m_remainSize + size;
 	m_remainSize = m_remainSize + size;
 	m_writePos = newBuf;
+	appLogger()->trace("Append ", size, " bytes to writting buffer of socket: ", m_sock, ", Now remain size is: ", m_remainSize);
 }
 
 void SocketWriter::write()
 {
 	if (m_remainSize == 0)
 	{
+		appLogger()->warn("There is no bytes of socket ", m_sock, " writting buffer to send.");
 		return;
 	}
 	m_state = WRITING;
 	int sentSize = send(m_sock, m_writePos, m_remainSize, 0);
 	m_writePos += sentSize;
 	m_remainSize -= sentSize;
+	appLogger()->trace("Sent ", sentSize, " bytes of writting buffer of socket: ", m_sock, ", Now remain size is: ", m_remainSize);
 	if (m_remainSize == 0)
 	{
 		clear();
@@ -188,6 +192,7 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 				return;
 			}
 			m_playerName = playerName;
+			appLogger()->trace("Player named: ", playerNameMb.c_str(), " login succeeded! Associated socket is ", m_sock);
 			replyLogin(TEXT("1;OK"));
 		}
 		break;
@@ -204,6 +209,7 @@ bool Session::initialize()
 
 void Session::replyRegister(const CString& body)
 {
+	appLogger()->trace("Reply register result to socket ", m_sock, ". Body is ", body);
 	std::string bodyUtf8 = StringUtil::CStringToUtf8(body);
 	int bufSize = 3 + bodyUtf8.size();
 	char* buf = new char[bufSize]();
@@ -221,6 +227,7 @@ void Session::replyRegister(const CString& body)
 
 void Session::replyLogin(const CString& body)
 {
+	appLogger()->trace("Reply login result to socket ", m_sock, ". Body is ", body);
 	std::string bodyUtf8 = StringUtil::CStringToUtf8(body);
 	int bufSize = 3 + bodyUtf8.size();
 	char* buf = new char[bufSize]();
