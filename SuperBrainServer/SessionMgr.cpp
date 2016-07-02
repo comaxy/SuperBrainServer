@@ -215,9 +215,9 @@ void Session::replyRegister(const CString& body)
 	char* buf = new char[bufSize]();
 	UINT8 eventId = REG_RESULT;
 	UINT16 bodyLength = bodyUtf8.size();
-	memcpy(buf, (char*)&eventId, 1);
-	memcpy(buf, (char*)&bodyLength, 2);
-	memcpy(buf, bodyUtf8.c_str(), bodyUtf8.size());
+	memcpy(buf, &eventId, 1);
+	memcpy(buf + 1, &bodyLength, 2);
+	memcpy(buf + 3, bodyUtf8.c_str(), bodyUtf8.size());
 	m_writer.appendWriteBuffer(buf, bufSize);
 	if (m_writer.state() == SocketWriter::READY)
 	{
@@ -234,8 +234,8 @@ void Session::replyLogin(const CString& body)
 	UINT8 eventId = LOGIN_RESULT;
 	UINT16 bodyLength = bodyUtf8.size();
 	memcpy(buf, (char*)&eventId, 1);
-	memcpy(buf, (char*)&bodyLength, 2);
-	memcpy(buf, bodyUtf8.c_str(), bodyUtf8.size());
+	memcpy(buf + 1, (char*)&bodyLength, 2);
+	memcpy(buf + 3, bodyUtf8.c_str(), bodyUtf8.size());
 	m_writer.appendWriteBuffer(buf, bufSize);
 	if (m_writer.state() == SocketWriter::READY)
 	{
