@@ -39,7 +39,6 @@ void SocketReader::read()
 			m_remainSize -= recvSize;
 			if (m_remainSize == 0)
 			{
-				m_state = READ_DONE;
 				appLogger()->trace("Socket ", m_sock, " read body done.");
 				appLogger()->trace("=============== EVENT RECEIVED DONE ===============");
 				appLogger()->trace("Event Id: ", *(UINT8*)&m_header[0], ", Body Length: ", m_bodySize);
@@ -48,6 +47,7 @@ void SocketReader::read()
 				{
 					m_delegate->readDone(*(UINT8*)&m_header[0], std::make_pair(m_body, m_bodySize));
 				}
+				clear();
 			}
 			else
 			{
@@ -55,8 +55,6 @@ void SocketReader::read()
 				m_readPos += recvSize;
 			}
 		}
-		break;
-	case READ_DONE:
 		break;
 	default:
 		break;

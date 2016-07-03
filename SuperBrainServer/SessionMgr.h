@@ -17,7 +17,6 @@ class SocketReader
 	{
 		READING_HEADER,
 		READING_BODY,
-		READ_DONE,
 	};
 
 public:
