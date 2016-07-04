@@ -58,6 +58,7 @@ private:
 	SocketReaderDelegate* m_delegate;
 };
 
+''
 class SocketWriter
 {
 public:
@@ -106,12 +107,23 @@ private:
 class Session : public SocketReaderDelegate
 {
 public:
-	Session(SOCKET sock) : m_sock(sock), m_reader(sock), m_writer(sock), m_playerName() {}
+	enum State
+	{
+		UNAVAILABLE,
+		AVAILABLE,
+		COMMUNICATING,
+		FIGHTING,
+	};
+
+public:
+	Session(SOCKET sock) : m_sock(sock), m_reader(sock), m_writer(sock), m_playerName(), m_state(UNAVAILABLE) {}
 	bool initialize();
 	void read();
 	void write();
 
 	virtual void readDone(UINT8 eventId, const std::pair<char*, UINT16>& body) override;
+
+	CString playerName() const { return m_playerName; }
 
 private:
 	void replyRegister(const CString& body);
@@ -122,6 +134,7 @@ private:
 	SocketReader m_reader;
 	SocketWriter m_writer;
 	CString m_playerName;
+	State m_state;
 };
 
 class SessionMgr
@@ -130,6 +143,7 @@ public:
 	std::shared_ptr<Session> newSession(SOCKET sock);
 	std::shared_ptr<Session> findSession(SOCKET sock);
 	void destorySession(SOCKET sock);
+	std::map<SOCKET, std::shared_ptr<Session>> allSessions() const { return m_sessions; }
 
 private:
 	std::map<SOCKET, std::shared_ptr<Session>> m_sessions;

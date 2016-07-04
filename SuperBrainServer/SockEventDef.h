@@ -25,4 +25,18 @@ enum SockEvent
 	// FLAG 1:表示成功 2:表示失败
 	// REASON 成功时无意义，失败是表示失败原因
 	LOGIN_RESULT = 4,
+
+	// 在线玩家列表请求
+	GET_PLAYER_LIST_REQUEST = 5,
+
+	// 在线玩家列表响应
+	// BODY格式为 playerName1;playerName2;...
+	GET_PLAYER_LIST_RESPONSE = 6,
+
+	// BODY: "playerName;gameName"
+	CHALLENGE_FRIEND_REQUEST = 7,
+
+	// BODY: "FLAG"
+	// FLAG: 1 同意 2 不同意
+	CHALLENGE_FRIEND_RESPONSE = 8,
 };

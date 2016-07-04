@@ -194,6 +194,32 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 			replyLogin(TEXT("1;OK"));
 		}
 		break;
+	case GET_PLAYER_LIST_REQUEST:
+	    {
+		    auto allSession = Application::sharedInstance()->sessionMgr()->allSessions();
+			CString body;
+			for (auto iter = allSession.begin; iter != allSession.end(); ++iter)
+			{
+				body += iter->second->playerName() + TEXT(";");
+			}
+			appLogger()->trace("Reply player list result to socket ", m_sock, ". Body is ", body);
+			std::string bodyUtf8 = StringUtil::CStringToUtf8(body);
+			int bufSize = 3 + bodyUtf8.size();
+			char* buf = new char[bufSize]();
+			UINT8 eventId = GET_PLAYER_LIST_RESPONSE;
+			UINT16 bodyLength = bodyUtf8.size();
+			memcpy(buf, (char*)&eventId, 1);
+			memcpy(buf + 1, (char*)&bodyLength, 2);
+			memcpy(buf + 3, bodyUtf8.c_str(), bodyUtf8.size());
+			m_writer.appendWriteBuffer(buf, bufSize);
+			if (m_writer.state() == SocketWriter::READY)
+			{
+				m_writer.write();
+			}
+	    }
+		break;
+	case CHALLENGE_FRIEND_REQUEST:
+		break;
 	default:
 		break;
 	}
