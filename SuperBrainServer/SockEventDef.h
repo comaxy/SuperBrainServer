@@ -36,7 +36,7 @@ enum SockEvent
 	// BODY: "playerName;gameName"
 	CHALLENGE_FRIEND_REQUEST = 7,
 
-	// BODY: "FLAG"
-	// FLAG: 1 同意 2 不同意
+	// BODY: "FLAG;REASON"
+	// FLAG: 1 同意 2 不同意 3 无法找到朋友
 	CHALLENGE_FRIEND_RESPONSE = 8,
 };

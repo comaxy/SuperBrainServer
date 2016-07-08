@@ -112,6 +112,15 @@ void Session::write()
 	m_writer.write();
 }
 
+void Session::writeBuffer(char* buf, int bufSize)
+{
+	m_writer.appendWriteBuffer(buf, bufSize);
+	if (m_writer.state() == SocketWriter::READY)
+	{
+		m_writer.write();
+	}
+}
+
 void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 {
 	switch (eventId)
@@ -196,9 +205,10 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 		break;
 	case GET_PLAYER_LIST_REQUEST:
 	    {
+			appLogger()->trace("Handle socket ", m_sock, " get player list request. ");
 		    auto allSession = Application::sharedInstance()->sessionMgr()->allSessions();
 			CString body;
-			for (auto iter = allSession.begin; iter != allSession.end(); ++iter)
+			for (auto iter = allSession.begin(); iter != allSession.end(); ++iter)
 			{
 				body += iter->second->playerName() + TEXT(";");
 			}
@@ -211,14 +221,66 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 			memcpy(buf, (char*)&eventId, 1);
 			memcpy(buf + 1, (char*)&bodyLength, 2);
 			memcpy(buf + 3, bodyUtf8.c_str(), bodyUtf8.size());
-			m_writer.appendWriteBuffer(buf, bufSize);
-			if (m_writer.state() == SocketWriter::READY)
-			{
-				m_writer.write();
-			}
+			writeBuffer(buf, bufSize);
 	    }
 		break;
 	case CHALLENGE_FRIEND_REQUEST:
+		{
+			appLogger()->trace("Handle socket ", m_sock, " challenge friend request.");
+			if (m_state == COMMUNICATING)
+			{
+				appLogger()->error("Can not challenge friend from socket: ", m_sock,
+					". The socket is communicating with another friend.");
+			}
+
+			// 改变socket状态为正在通信状态
+			m_state = COMMUNICATING;
+
+			// 解析body内容
+			std::string utf8Str(body.first, body.second);
+			CString challengeInfo = StringUtil::Utf8ToCString(utf8Str);
+			int seperatorPos = challengeInfo.Find(TEXT(';'));
+			CString friendName = challengeInfo.Left(seperatorPos);
+			CString gameName = challengeInfo.Mid(seperatorPos + 1);
+			appLogger()->trace("Friend name is: ", StringUtil::CStringToMultiByte(friendName).c_str(),
+				"Game name is :", StringUtil::CStringToMultiByte(gameName).c_str());
+
+			appLogger()->trace("Sending challenge information to friend ", StringUtil::CStringToMultiByte(friendName).c_str());
+			// 找到对方的session，发送消息给对方
+			auto friendSession = Application::sharedInstance()->sessionMgr()->findSession(friendName);
+			if (friendSession == nullptr)
+			{
+				m_state = AVAILABLE;
+				appLogger()->error("Can not find friend named ", StringUtil::CStringToMultiByte(friendName).c_str());
+
+				// 返回错误信息给发送者
+				CString responseBody = TEXT("3;无法找到对方，对方可能已经下线");
+				std::string bodyUtf8 = StringUtil::CStringToUtf8(responseBody);
+				int bufSize = 3 + bodyUtf8.size();
+				char* buf = new char[bufSize]();
+				UINT8 eventId = CHALLENGE_FRIEND_RESPONSE;
+				UINT16 bodyLength = bodyUtf8.size();
+				memcpy(buf, (char*)&eventId, 1);
+				memcpy(buf + 1, (char*)&bodyLength, 2);
+				memcpy(buf + 3, bodyUtf8.c_str(), bodyUtf8.size());
+				writeBuffer(buf, bufSize);
+
+				break;
+			}
+			m_friendName = friendName;  // 设置朋友名称
+			appLogger()->trace("Sending challenge data to friend soekt ", friendSession->socket());
+			CString body;
+			body = m_playerName + TEXT(";") + gameName;
+			std::string bodyUtf8 = StringUtil::CStringToUtf8(body);
+			int bufSize = 3 + bodyUtf8.size();
+			char* buf = new char[bufSize]();
+			UINT8 eventId = CHALLENGE_FRIEND_REQUEST;
+			UINT16 bodyLength = bodyUtf8.size();
+			memcpy(buf, (char*)&eventId, 1);
+			memcpy(buf + 1, (char*)&bodyLength, 2);
+			memcpy(buf + 3, bodyUtf8.c_str(), bodyUtf8.size());
+			friendSession->writeBuffer(buf, bufSize);
+		}
 		break;
 	default:
 		break;
@@ -287,6 +349,22 @@ std::shared_ptr<Session> SessionMgr::findSession(SOCKET sock)
 	}
 	appLogger()->trace("Session for socket: ", sock, " has been found.");
 	return iter->second;
+}
+
+std::shared_ptr<Session> SessionMgr::findSession(const CString& playerName)
+{
+	std::string playerNameMb = StringUtil::CStringToMultiByte(playerName);
+	appLogger()->trace("Finding session for player named: ", playerNameMb.c_str());
+	for (auto pairSession : m_sessions)
+	{
+		if (pairSession.second->playerName() == playerName)
+		{
+			appLogger()->error("Session for player named: ", playerNameMb.c_str(), " has been found.");
+			return pairSession.second;
+		}
+	}
+	appLogger()->trace("Can not find session for player named: ", playerNameMb.c_str());
+	return nullptr;
 }
 
 void SessionMgr::destorySession(SOCKET sock)

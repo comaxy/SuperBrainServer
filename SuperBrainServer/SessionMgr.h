@@ -58,7 +58,6 @@ private:
 	SocketReaderDelegate* m_delegate;
 };
 
-''
 class SocketWriter
 {
 public:
@@ -116,14 +115,18 @@ public:
 	};
 
 public:
-	Session(SOCKET sock) : m_sock(sock), m_reader(sock), m_writer(sock), m_playerName(), m_state(UNAVAILABLE) {}
+	Session(SOCKET sock) : m_sock(sock), m_reader(sock), 
+		m_writer(sock), m_playerName(), m_state(UNAVAILABLE) {}
 	bool initialize();
 	void read();
 	void write();
+	void writeBuffer(char* buf, int bufSize);
+	SOCKET socket() const { return m_sock; }
 
 	virtual void readDone(UINT8 eventId, const std::pair<char*, UINT16>& body) override;
 
 	CString playerName() const { return m_playerName; }
+	void setFriendName(const CString& friendName) { m_friendName = friendName; }
 
 private:
 	void replyRegister(const CString& body);
@@ -135,6 +138,7 @@ private:
 	SocketWriter m_writer;
 	CString m_playerName;
 	State m_state;
+	CString m_friendName;  // 正在与之交互的玩家名称，仅在交互和对战时保存对方玩家名称
 };
 
 class SessionMgr
@@ -142,6 +146,7 @@ class SessionMgr
 public:
 	std::shared_ptr<Session> newSession(SOCKET sock);
 	std::shared_ptr<Session> findSession(SOCKET sock);
+	std::shared_ptr<Session> findSession(const CString& playerName);
 	void destorySession(SOCKET sock);
 	std::map<SOCKET, std::shared_ptr<Session>> allSessions() const { return m_sessions; }
 
