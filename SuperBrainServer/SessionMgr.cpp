@@ -17,13 +17,28 @@ void SocketReader::read()
 			m_remainSize -= recvSize;
 			if (m_remainSize == 0)
 			{
+				appLogger()->trace("Socket ", m_sock, " read header done.");
+
 				m_state = READING_BODY;
 				m_bodySize = *(reinterpret_cast<UINT16*>(&m_header[1]));
-				m_body = new char[m_bodySize]();
-				m_readPos = m_body;
-				m_remainSize = m_bodySize;
-
-				appLogger()->trace("Socket ", m_sock, " read header done.");
+				if (m_bodySize > 0)
+				{
+					m_body = new char[m_bodySize]();
+					m_readPos = m_body;
+					m_remainSize = m_bodySize;
+				}
+				else
+				{
+					appLogger()->trace("Socket ", m_sock, " read body done.");
+					appLogger()->trace("=============== EVENT RECEIVED DONE ===============");
+					appLogger()->trace("Event Id: ", *(UINT8*)&m_header[0], ", Body Length: ", m_bodySize);
+					appLogger()->trace("===================================================");
+					if (m_delegate)
+					{
+						m_delegate->readDone(*(UINT8*)&m_header[0], std::make_pair(m_body, m_bodySize));
+					}
+					clear();
+				}
 			}
 			else
 			{
