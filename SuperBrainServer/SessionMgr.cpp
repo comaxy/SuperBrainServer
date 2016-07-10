@@ -178,6 +178,7 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 				query->exec();
 				appLogger()->trace("Register succeeded! Socket: ", m_sock);
 				replyRegister(TEXT("1;OK"));
+				m_playerName = playerName;
 			}
 		}
 		break;
