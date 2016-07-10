@@ -127,6 +127,7 @@ public:
 
 	CString playerName() const { return m_playerName; }
 	void setFriendName(const CString& friendName) { m_friendName = friendName; }
+	void setState(State state) { m_state = state; }
 
 private:
 	void replyRegister(const CString& body);

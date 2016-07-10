@@ -250,6 +250,7 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 			{
 				appLogger()->error("Can not challenge friend from socket: ", m_sock,
 					". The socket is communicating with another friend.");
+				break;
 			}
 
 			// 改变socket状态为正在通信状态
@@ -287,6 +288,8 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 				break;
 			}
 			m_friendName = friendName;  // 设置朋友名称
+			friendSession->setState(Session::COMMUNICATING);
+			friendSession->setFriendName(m_playerName);
 			appLogger()->trace("Sending challenge data to friend soekt ", friendSession->socket());
 			CString body;
 			body = m_playerName + TEXT(";") + gameName;
@@ -300,6 +303,38 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 			memcpy(buf + 3, bodyUtf8.c_str(), bodyUtf8.size());
 			friendSession->writeBuffer(buf, bufSize);
 		}
+		break;
+	case CHALLENGE_FRIEND_RESPONSE:
+	    {
+			appLogger()->trace("Handle socket ", m_sock, " challenge friend response.");
+			if (m_state != COMMUNICATING)
+			{
+				appLogger()->error("Can not reply challenge friend from socket: ", m_sock,
+					". The socket is not in communicating state.");
+				break;
+			}
+
+			appLogger()->trace("Sending challenge reply information to friend ", StringUtil::CStringToMultiByte(m_friendName).c_str());
+			// 找到对方的session，发送消息给对方
+			auto friendSession = Application::sharedInstance()->sessionMgr()->findSession(m_friendName);
+			if (friendSession == nullptr)
+			{
+				m_state = AVAILABLE;
+				appLogger()->error("Can not find friend named ", StringUtil::CStringToMultiByte(m_friendName).c_str());
+				break;
+			}
+
+			appLogger()->trace("Sending challenge reply data to friend soekt ", friendSession->socket());
+			std::string bodyUtf8(body.first, body.second);
+			int bufSize = 3 + bodyUtf8.size();
+			char* buf = new char[bufSize]();
+			UINT8 eventId = CHALLENGE_FRIEND_RESPONSE;
+			UINT16 bodyLength = bodyUtf8.size();
+			memcpy(buf, (char*)&eventId, 1);
+			memcpy(buf + 1, (char*)&bodyLength, 2);
+			memcpy(buf + 3, bodyUtf8.c_str(), bodyUtf8.size());
+			friendSession->writeBuffer(buf, bufSize);
+	    }
 		break;
 	default:
 		break;
