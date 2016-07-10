@@ -225,7 +225,10 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 			CString body;
 			for (auto iter = allSession.begin(); iter != allSession.end(); ++iter)
 			{
-				body += iter->second->playerName() + TEXT(";");
+				if (iter->second->playerName != m_playerName)
+				{
+					body += iter->second->playerName() + TEXT(";");
+				}
 			}
 			appLogger()->trace("Reply player list result to socket ", m_sock, ". Body is ", body);
 			std::string bodyUtf8 = StringUtil::CStringToUtf8(body);
