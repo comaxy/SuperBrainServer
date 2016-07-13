@@ -74,6 +74,12 @@
     <ClInclude Include="LoggerDef.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="SockEventDef.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Player.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="resource\skin\MainWindow.xml">

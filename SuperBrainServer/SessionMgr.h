@@ -5,6 +5,8 @@
 #include <memory>
 #include <map>
 
+class Player;
+
 class SocketReaderDelegate
 {
 public:
@@ -106,17 +108,7 @@ private:
 class Session : public SocketReaderDelegate
 {
 public:
-	enum State
-	{
-		UNAVAILABLE,
-		AVAILABLE,
-		COMMUNICATING,
-		FIGHTING,
-	};
-
-public:
-	Session(SOCKET sock) : m_sock(sock), m_reader(sock), 
-		m_writer(sock), m_playerName(), m_state(UNAVAILABLE) {}
+	Session(SOCKET sock);
 	bool initialize();
 	void read();
 	void write();
@@ -125,9 +117,9 @@ public:
 
 	virtual void readDone(UINT8 eventId, const std::pair<char*, UINT16>& body) override;
 
-	CString playerName() const { return m_playerName; }
 	void setFriendName(const CString& friendName) { m_friendName = friendName; }
-	void setState(State state) { m_state = state; }
+
+	std::shared_ptr<Player> player() { return m_player; }
 
 private:
 	void replyRegister(const CString& body);
@@ -135,10 +127,9 @@ private:
 
 private:
 	SOCKET m_sock;
+	std::shared_ptr<Player> m_player;
 	SocketReader m_reader;
 	SocketWriter m_writer;
-	CString m_playerName;
-	State m_state;
 	CString m_friendName;  // 正在与之交互的玩家名称，仅在交互和对战时保存对方玩家名称
 };
 

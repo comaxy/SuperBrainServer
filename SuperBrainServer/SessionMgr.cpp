@@ -4,6 +4,7 @@
 #include "SockEventDef.h"
 #include "Application.h"
 #include "DbManager.h"
+#include "Player.h"
 #include <atlstr.h>
 
 void SocketReader::read()
@@ -117,6 +118,15 @@ void SocketWriter::write()
 	}
 }
 
+Session::Session(SOCKET sock) 
+	: m_sock(sock)
+	, m_player(new Player())
+	, m_reader(sock)
+	, m_writer(sock)
+{
+
+}
+
 void Session::read()
 {
 	m_reader.read();
@@ -178,7 +188,8 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 				query->exec();
 				appLogger()->trace("Register succeeded! Socket: ", m_sock);
 				replyRegister(TEXT("1;OK"));
-				m_playerName = playerName;
+
+				m_player->setName(playerName);
 			}
 		}
 		break;
@@ -214,7 +225,7 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 				replyLogin(TEXT("2;用户名或密码错误！"));
 				return;
 			}
-			m_playerName = playerName;
+			m_player->setName(playerName);
 			appLogger()->trace("Player named: ", playerNameMb.c_str(), " login succeeded! Associated socket is ", m_sock);
 			replyLogin(TEXT("1;OK"));
 		}
@@ -226,9 +237,9 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 			CString body;
 			for (auto iter = allSession.begin(); iter != allSession.end(); ++iter)
 			{
-				if (iter->second->playerName() != m_playerName)
+				if (iter->second->player()->name() != m_player->name())
 				{
-					body += iter->second->playerName() + TEXT(";");
+					body += iter->second->player()->name() + TEXT(";");
 				}
 			}
 			appLogger()->trace("Reply player list result to socket ", m_sock, ". Body is ", body);
@@ -246,7 +257,7 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 	case CHALLENGE_FRIEND_REQUEST:
 		{
 			appLogger()->trace("Handle socket ", m_sock, " challenge friend request.");
-			if (m_state == COMMUNICATING)
+			if (m_player->state() == Player::COMMUNICATING)
 			{
 				appLogger()->error("Can not challenge friend from socket: ", m_sock,
 					". The socket is communicating with another friend.");
@@ -254,7 +265,7 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 			}
 
 			// 改变socket状态为正在通信状态
-			m_state = COMMUNICATING;
+			m_player->setState(Player::COMMUNICATING);
 
 			// 解析body内容
 			std::string utf8Str(body.first, body.second);
@@ -270,7 +281,7 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 			auto friendSession = Application::sharedInstance()->sessionMgr()->findSession(friendName);
 			if (friendSession == nullptr)
 			{
-				m_state = AVAILABLE;
+				m_player->setState(Player::AVAILABLE);
 				appLogger()->error("Can not find friend named ", StringUtil::CStringToMultiByte(friendName).c_str());
 
 				// 返回错误信息给发送者
@@ -288,11 +299,11 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 				break;
 			}
 			m_friendName = friendName;  // 设置朋友名称
-			friendSession->setState(Session::COMMUNICATING);
-			friendSession->setFriendName(m_playerName);
+			friendSession->player()->setState(Player::COMMUNICATING);
+			friendSession->setFriendName(m_player->name());
 			appLogger()->trace("Sending challenge data to friend soekt ", friendSession->socket());
 			CString body;
-			body = m_playerName + TEXT(";") + gameName;
+			body = m_player->name() + TEXT(";") + gameName;
 			std::string bodyUtf8 = StringUtil::CStringToUtf8(body);
 			int bufSize = 3 + bodyUtf8.size();
 			char* buf = new char[bufSize]();
@@ -307,7 +318,7 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 	case CHALLENGE_FRIEND_RESPONSE:
 	    {
 			appLogger()->trace("Handle socket ", m_sock, " challenge friend response.");
-			if (m_state != COMMUNICATING)
+			if (m_player->state() != Player::COMMUNICATING)
 			{
 				appLogger()->error("Can not reply challenge friend from socket: ", m_sock,
 					". The socket is not in communicating state.");
@@ -319,7 +330,7 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 			auto friendSession = Application::sharedInstance()->sessionMgr()->findSession(m_friendName);
 			if (friendSession == nullptr)
 			{
-				m_state = AVAILABLE;
+				m_player->setState(Player::AVAILABLE);
 				appLogger()->error("Can not find friend named ", StringUtil::CStringToMultiByte(m_friendName).c_str());
 				break;
 			}
@@ -334,6 +345,8 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 			memcpy(buf + 1, (char*)&bodyLength, 2);
 			memcpy(buf + 3, bodyUtf8.c_str(), bodyUtf8.size());
 			friendSession->writeBuffer(buf, bufSize);
+
+			// 如果同意，则发送消息给双方玩家
 	    }
 		break;
 	default:
@@ -411,7 +424,7 @@ std::shared_ptr<Session> SessionMgr::findSession(const CString& playerName)
 	appLogger()->trace("Finding session for player named: ", playerNameMb.c_str());
 	for (auto pairSession : m_sessions)
 	{
-		if (pairSession.second->playerName() == playerName)
+		if (pairSession.second->player()->name() == playerName)
 		{
 			appLogger()->error("Session for player named: ", playerNameMb.c_str(), " has been found.");
 			return pairSession.second;

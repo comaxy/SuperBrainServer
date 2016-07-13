@@ -39,4 +39,12 @@ enum SockEvent
 	// BODY: "FLAG;REASON"
 	// FLAG: 1 同意 2 不同意 3 无法找到朋友
 	CHALLENGE_FRIEND_RESPONSE = 8,
+
+	// 10000 - 20000 for rapid calculation
+
+};
+
+enum Game
+{
+	RAPID_CALCULATION = 1,
 };
