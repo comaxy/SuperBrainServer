@@ -4,6 +4,7 @@
 #include "SockEventDef.h"
 #include "Application.h"
 #include "DbManager.h"
+#include "Socket.h"
 #include "Player.h"
 #include <atlstr.h>
 
@@ -119,31 +120,9 @@ void SocketWriter::write()
 }
 
 Session::Session(SOCKET sock) 
-	: m_sock(sock)
+	: m_socket(new Socket(sock))
 	, m_player(new Player())
-	, m_reader(sock)
-	, m_writer(sock)
 {
-
-}
-
-void Session::read()
-{
-	m_reader.read();
-}
-
-void Session::write()
-{
-	m_writer.write();
-}
-
-void Session::writeBuffer(char* buf, int bufSize)
-{
-	m_writer.appendWriteBuffer(buf, bufSize);
-	if (m_writer.state() == SocketWriter::READY)
-	{
-		m_writer.write();
-	}
 }
 
 void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
@@ -158,16 +137,16 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 			CString playerName = playerInfo.Left(seperatorPos);
 			CString password = playerInfo.Mid(seperatorPos + 1);
 			std::string playerNameMb = StringUtil::CStringToMultiByte(playerName);
-			appLogger()->trace("Handle socket ", m_sock, " register event. ",
+			appLogger()->trace("Handle socket ", m_socket->socket(), " register event. ",
 				"Player name: ", playerNameMb.c_str());
 			if (playerName.IsEmpty())
 			{
-				appLogger()->trace("Error: Player name for register is empty! Socket: ", m_sock);
+				appLogger()->trace("Error: Player name for register is empty! Socket: ", m_socket->socket());
 				return;
 			}
 			if (password.IsEmpty())
 			{
-				appLogger()->trace("Error: Player password for register is empty! Socket: ", m_sock);
+				appLogger()->trace("Error: Player password for register is empty! Socket: ", m_socket->socket());
 				return;
 			}
 
@@ -177,7 +156,7 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 			query->exec();
 			if (query->next())
 			{
-				appLogger()->trace("Register failed! Player named ", playerNameMb.c_str(), " has already exists. Socket: ", m_sock);
+				appLogger()->trace("Register failed! Player named ", playerNameMb.c_str(), " has already exists. Socket: ", m_socket->socket());
 				replyRegister(TEXT("2;用户名已经存在！"));
 			}
 			else
@@ -186,7 +165,7 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 				query->bindValue(TEXT(":name"), playerName);
 				query->bindValue(TEXT(":password"), password);
 				query->exec();
-				appLogger()->trace("Register succeeded! Socket: ", m_sock);
+				appLogger()->trace("Register succeeded! Socket: ", m_socket->socket());
 				replyRegister(TEXT("1;OK"));
 
 				m_player->setName(playerName);
@@ -201,17 +180,17 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 			CString playerName = playerInfo.Left(seperatorPos);
 			CString password = playerInfo.Mid(seperatorPos + 1);
 			std::string playerNameMb = StringUtil::CStringToMultiByte(playerName);
-			appLogger()->trace("Handle socket ", m_sock, " login event. ", 
+			appLogger()->trace("Handle socket ", m_socket->socket(), " login event. ", 
 				"Player name: ", playerNameMb.c_str());
 			if (playerName.IsEmpty())
 			{
-				appLogger()->trace("Error: Player name for login is empty! Socket: ", m_sock);
+				appLogger()->trace("Error: Player name for login is empty! Socket: ", m_socket->socket());
 				replyLogin(TEXT("2;用户名不能为空！"));
 				return;
 			}
 			if (password.IsEmpty())
 			{
-				appLogger()->trace("Error: Player password for login is empty! Socket: ", m_sock);
+				appLogger()->trace("Error: Player password for login is empty! Socket: ", m_socket->socket());
 				replyLogin(TEXT("2;密码不能为空！"));
 				return;
 			}
@@ -221,18 +200,18 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 			query->exec();
 			if (!query->next())
 			{
-				appLogger()->trace("Error: Player named:", playerNameMb.c_str(), " not exists in DB! Socket: ", m_sock);
+				appLogger()->trace("Error: Player named:", playerNameMb.c_str(), " not exists in DB! Socket: ", m_socket->socket());
 				replyLogin(TEXT("2;用户名或密码错误！"));
 				return;
 			}
 			m_player->setName(playerName);
-			appLogger()->trace("Player named: ", playerNameMb.c_str(), " login succeeded! Associated socket is ", m_sock);
+			appLogger()->trace("Player named: ", playerNameMb.c_str(), " login succeeded! Associated socket is ", m_socket->socket());
 			replyLogin(TEXT("1;OK"));
 		}
 		break;
 	case GET_PLAYER_LIST_REQUEST:
 	    {
-			appLogger()->trace("Handle socket ", m_sock, " get player list request. ");
+			appLogger()->trace("Handle socket ", m_socket->socket(), " get player list request. ");
 		    auto allSession = Application::sharedInstance()->sessionMgr()->allSessions();
 			CString body;
 			for (auto iter = allSession.begin(); iter != allSession.end(); ++iter)
@@ -242,7 +221,7 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 					body += iter->second->player()->name() + TEXT(";");
 				}
 			}
-			appLogger()->trace("Reply player list result to socket ", m_sock, ". Body is ", body);
+			appLogger()->trace("Reply player list result to socket ", m_socket->socket(), ". Body is ", body);
 			std::string bodyUtf8 = StringUtil::CStringToUtf8(body);
 			int bufSize = 3 + bodyUtf8.size();
 			char* buf = new char[bufSize]();
@@ -251,15 +230,15 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 			memcpy(buf, (char*)&eventId, 1);
 			memcpy(buf + 1, (char*)&bodyLength, 2);
 			memcpy(buf + 3, bodyUtf8.c_str(), bodyUtf8.size());
-			writeBuffer(buf, bufSize);
+			m_socket->writeBuffer(buf, bufSize);
 	    }
 		break;
 	case CHALLENGE_FRIEND_REQUEST:
 		{
-			appLogger()->trace("Handle socket ", m_sock, " challenge friend request.");
+			appLogger()->trace("Handle socket ", m_socket->socket(), " challenge friend request.");
 			if (m_player->state() == Player::COMMUNICATING)
 			{
-				appLogger()->error("Can not challenge friend from socket: ", m_sock,
+				appLogger()->error("Can not challenge friend from socket: ", m_socket->socket(),
 					". The socket is communicating with another friend.");
 				break;
 			}
@@ -294,7 +273,7 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 				memcpy(buf, (char*)&eventId, 1);
 				memcpy(buf + 1, (char*)&bodyLength, 2);
 				memcpy(buf + 3, bodyUtf8.c_str(), bodyUtf8.size());
-				writeBuffer(buf, bufSize);
+				m_socket->writeBuffer(buf, bufSize);
 
 				break;
 			}
@@ -312,15 +291,15 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 			memcpy(buf, (char*)&eventId, 1);
 			memcpy(buf + 1, (char*)&bodyLength, 2);
 			memcpy(buf + 3, bodyUtf8.c_str(), bodyUtf8.size());
-			friendSession->writeBuffer(buf, bufSize);
+			friendSession->socket()->writeBuffer(buf, bufSize);
 		}
 		break;
 	case CHALLENGE_FRIEND_RESPONSE:
 	    {
-			appLogger()->trace("Handle socket ", m_sock, " challenge friend response.");
+			appLogger()->trace("Handle socket ", m_socket->socket(), " challenge friend response.");
 			if (m_player->state() != Player::COMMUNICATING)
 			{
-				appLogger()->error("Can not reply challenge friend from socket: ", m_sock,
+				appLogger()->error("Can not reply challenge friend from socket: ", m_socket->socket(),
 					". The socket is not in communicating state.");
 				break;
 			}
@@ -344,7 +323,7 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 			memcpy(buf, (char*)&eventId, 1);
 			memcpy(buf + 1, (char*)&bodyLength, 2);
 			memcpy(buf + 3, bodyUtf8.c_str(), bodyUtf8.size());
-			friendSession->writeBuffer(buf, bufSize);
+			friendSession->socket()->writeBuffer(buf, bufSize);
 
 			// 如果同意，则发送消息给双方玩家
 	    }
@@ -356,13 +335,13 @@ void Session::readDone(UINT8 eventId, const std::pair<char*, UINT16>& body)
 
 bool Session::initialize()
 {
-	m_reader.setDelegate(this);
+	m_socket->reader()->setDelegate(this);
 	return true;
 }
 
 void Session::replyRegister(const CString& body)
 {
-	appLogger()->trace("Reply register result to socket ", m_sock, ". Body is ", body);
+	appLogger()->trace("Reply register result to socket ", m_socket->socket(), ". Body is ", body);
 	std::string bodyUtf8 = StringUtil::CStringToUtf8(body);
 	int bufSize = 3 + bodyUtf8.size();
 	char* buf = new char[bufSize]();
@@ -371,16 +350,16 @@ void Session::replyRegister(const CString& body)
 	memcpy(buf, &eventId, 1);
 	memcpy(buf + 1, &bodyLength, 2);
 	memcpy(buf + 3, bodyUtf8.c_str(), bodyUtf8.size());
-	m_writer.appendWriteBuffer(buf, bufSize);
-	if (m_writer.state() == SocketWriter::READY)
+	m_socket->writer()->appendWriteBuffer(buf, bufSize);
+	if (m_socket->writer()->state() == SocketWriter::READY)
 	{
-		m_writer.write();
+		m_socket->writer()->write();
 	}
 }
 
 void Session::replyLogin(const CString& body)
 {
-	appLogger()->trace("Reply login result to socket ", m_sock, ". Body is ", body);
+	appLogger()->trace("Reply login result to socket ", m_socket->socket(), ". Body is ", body);
 	std::string bodyUtf8 = StringUtil::CStringToUtf8(body);
 	int bufSize = 3 + bodyUtf8.size();
 	char* buf = new char[bufSize]();
@@ -389,10 +368,10 @@ void Session::replyLogin(const CString& body)
 	memcpy(buf, (char*)&eventId, 1);
 	memcpy(buf + 1, (char*)&bodyLength, 2);
 	memcpy(buf + 3, bodyUtf8.c_str(), bodyUtf8.size());
-	m_writer.appendWriteBuffer(buf, bufSize);
-	if (m_writer.state() == SocketWriter::READY)
+	m_socket->writer()->appendWriteBuffer(buf, bufSize);
+	if (m_socket->writer()->state() == SocketWriter::READY)
 	{
-		m_writer.write();
+		m_socket->writer()->write();
 	}
 }
 

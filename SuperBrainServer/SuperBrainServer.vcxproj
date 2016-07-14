@@ -103,6 +103,7 @@ xcopy $(ProjectDir)log.properties  $(SolutionDir)$(Configuration)\ /Y /F /R</Com
     <ClCompile Include="MainWindow.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="SessionMgr.cpp" />
+    <ClCompile Include="Socket.cpp" />
     <ClCompile Include="sqlite\sqlite3.c" />
     <ClCompile Include="StringUtil.cpp" />
   </ItemGroup>
@@ -115,6 +116,7 @@ xcopy $(ProjectDir)log.properties  $(SolutionDir)$(Configuration)\ /Y /F /R</Com
     <ClInclude Include="MainWindow.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="SessionMgr.h" />
+    <ClInclude Include="Socket.h" />
     <ClInclude Include="SockEventDef.h" />
     <ClInclude Include="sqlite\sqlite3.h" />
     <ClInclude Include="StringUtil.h" />

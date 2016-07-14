@@ -125,7 +125,7 @@ void MainWindow::OnMsgSocketRead(SOCKET sock)
 		return;
 	}
 
-	session->read();
+	session->socket()->read();
 }
 
 void MainWindow::OnMsgSocketWrite(SOCKET sock)
@@ -137,7 +137,7 @@ void MainWindow::OnMsgSocketWrite(SOCKET sock)
 		appLogger()->error("Can not find the session for socket ", sock, " for write.");
 	}
 
-	session->write();
+	session->socket()->write();
 }
 
 void MainWindow::OnMsgSocketClose(SOCKET sock)
