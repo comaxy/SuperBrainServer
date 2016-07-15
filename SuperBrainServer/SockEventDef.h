@@ -40,11 +40,19 @@ enum SockEvent
 	// FLAG: 1 同意 2 不同意 3 无法找到朋友
 	CHALLENGE_FRIEND_RESPONSE = 8,
 
-	// 10000 - 20000 for rapid calculation
+	// 100 - 200 for rapid calculation
+	RAPID_CALCULATION_BEGIN = 100,
 
+	// BODY: Number1 Number2 
+	RC_START = 101,
+
+	// BODY: "Result;Time"
+	RC_RESULT = 102,
+
+	// BODY: "Name;Result;Time;Name;Result;Time;RightResult"
+	RC_FINAL = 103,
+
+	RAPID_CALCULATION_END = 200,
 };
 
-enum Game
-{
-	RAPID_CALCULATION = 1,
-};
+static const CString RAPID_CALCULATION = TEXT("RapidCalculation");

@@ -36,9 +36,6 @@
     <ClCompile Include="DuiManager.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="SessionMgr.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="Logger.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -46,6 +43,24 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Player.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Socket.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Game.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Session.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="SessionManager.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayerManager.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="GameManager.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -68,9 +83,6 @@
     <ClInclude Include="DuiManager.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="SessionMgr.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Logger.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -81,6 +93,24 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Player.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Socket.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Game.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Session.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="SessionManager.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerManager.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="GameManager.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

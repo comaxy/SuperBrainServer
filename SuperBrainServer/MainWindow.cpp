@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 #include "Application.h"
-#include "SessionMgr.h"
+#include "SessionManager.h"
+#include "Session.h"
 #include "LoggerDef.h"
 
 #define WM_SOCKET (WM_USER + 1000)
@@ -111,14 +112,14 @@ void MainWindow::OnMsgSocketAccept(SOCKET sock)
 	else
 	{
 		appLogger()->trace("New socket accepted. Socket:", newSock);
-		Application::sharedInstance()->sessionMgr()->newSession(newSock);
+		Application::sharedInstance()->sessionManager()->newSession(newSock);
 	}
 }
 
 void MainWindow::OnMsgSocketRead(SOCKET sock)
 {
 	appLogger()->trace("Handle read event on socket: ", sock);
-	std::shared_ptr<Session> session = Application::sharedInstance()->sessionMgr()->findSession(sock);
+	std::shared_ptr<Session> session = Application::sharedInstance()->sessionManager()->findSession(sock);
 	if (!session)
 	{
 		appLogger()->error("Can not find the session for socket ", sock, " for read.");
@@ -131,7 +132,7 @@ void MainWindow::OnMsgSocketRead(SOCKET sock)
 void MainWindow::OnMsgSocketWrite(SOCKET sock)
 {
 	appLogger()->trace("Handle write event on socket: ", sock);
-	std::shared_ptr<Session> session = Application::sharedInstance()->sessionMgr()->findSession(sock);
+	std::shared_ptr<Session> session = Application::sharedInstance()->sessionManager()->findSession(sock);
 	if (!session)
 	{
 		appLogger()->error("Can not find the session for socket ", sock, " for write.");
@@ -143,7 +144,7 @@ void MainWindow::OnMsgSocketWrite(SOCKET sock)
 void MainWindow::OnMsgSocketClose(SOCKET sock)
 {
 	appLogger()->trace("Handle close event on socket: ", sock);
-	Application::sharedInstance()->sessionMgr()->destorySession(sock);
+	Application::sharedInstance()->sessionManager()->destorySession(sock);
 }
 
 bool MainWindow::OnNotifyWindowInit()

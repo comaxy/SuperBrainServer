@@ -11,4 +11,6 @@ public:
 
 	static CString multiByteToCString(const std::string& mbstr);
 	static std::string CStringToMultiByte(const CString& cstr);
+
+	static CString GetGUID();
 };

@@ -2,7 +2,7 @@
 #include "DuiManager.h"
 #include "DbManager.h"
 #include "MainWindow.h"
-#include "SessionMgr.h"
+#include "SessionManager.h"
 #include "Logger.h"
 #include "LoggerDef.h"
 #include <Windows.h>
@@ -14,7 +14,7 @@ Application::Application()
 	, m_duiManager(new DuiManager())
 	, m_dbManager(new DbManager())
 	, m_mainWindow(nullptr)
-	, m_sessionMgr(new SessionMgr())
+	, m_sessionManager(new SessionManager())
 	, m_logger(new Logger())
 {
 }
