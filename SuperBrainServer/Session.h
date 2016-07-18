@@ -13,6 +13,9 @@ public:
 	std::shared_ptr<Socket> socket() { return m_socket; }
 	virtual void readDone(UINT8 eventId, const std::pair<char*, UINT16>& body) override;
 
+	void sendStringBody(UINT8 eventId, const CString& body);
+	void sendStringBody(UINT8 eventId, const std::string& bodyUtf8);
+
 private:
 	void handleRegister(const std::pair<char*, UINT16>& body);
 	void replyRegister(const CString& body);
@@ -22,9 +25,7 @@ private:
 	void handleChallengeFriendRequest(const std::pair<char*, UINT16>& body);
 	void handleChallengeFriendResponse(const std::pair<char*, UINT16>& body);
 	void handleEventDefault(UINT8 eventId, const std::pair<char*, UINT16>& body);
-	void sendStringBody(UINT8 eventId, const CString& body);
-	void sendStringBody(UINT8 eventId, const std::string& bodyUtf8);
-
+	
 private:
 	std::shared_ptr<Socket> m_socket;
 };

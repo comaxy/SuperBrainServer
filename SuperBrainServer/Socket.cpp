@@ -24,14 +24,7 @@ void SocketReader::read()
 				}
 				else
 				{
-					LOG_TRACE("Socket ", m_sock, " read body done.");
-					LOG_TRACE("=============== EVENT RECEIVED DONE ===============");
-					LOG_TRACE("Event Id: ", *(UINT8*)&m_header[0], ", Body Length: ", m_bodySize);
-					LOG_TRACE("===================================================");
-					if (m_delegate)
-					{
-						m_delegate->readDone(*(UINT8*)&m_header[0], std::make_pair(m_body, m_bodySize));
-					}
+					readDone();
 					clear();
 				}
 			}
@@ -49,14 +42,7 @@ void SocketReader::read()
 			m_remainSize -= recvSize;
 			if (m_remainSize == 0)
 			{
-				LOG_TRACE("Socket ", m_sock, " read body done.");
-				LOG_TRACE("=============== EVENT RECEIVED DONE ===============");
-				LOG_TRACE("Event Id: ", *(UINT8*)&m_header[0], ", Body Length: ", m_bodySize);
-				LOG_TRACE("===================================================");
-				if (m_delegate)
-				{
-					m_delegate->readDone(*(UINT8*)&m_header[0], std::make_pair(m_body, m_bodySize));
-				}
+				readDone();
 				clear();
 			}
 			else
@@ -68,6 +54,18 @@ void SocketReader::read()
 		}
 	default:
 		break;
+	}
+}
+
+void SocketReader::readDone()
+{
+	LOG_TRACE("Socket ", m_sock, " read body done.");
+	LOG_TRACE("=============== EVENT RECEIVED DONE ===============");
+	LOG_TRACE("Event Id: ", *(UINT8*)&m_header[0], ", Body Length: ", m_bodySize);
+	LOG_TRACE("===================================================");
+	if (m_delegate)
+	{
+		m_delegate->readDone(*(UINT8*)&m_header[0], std::make_pair(m_body, m_bodySize));
 	}
 }
 

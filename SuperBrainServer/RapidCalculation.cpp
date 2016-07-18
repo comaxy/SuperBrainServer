@@ -23,6 +23,11 @@ void RapidCalculation::handleEvent(SOCKET socket, UINT8 eventId, const std::pair
 	case RC_RESULT:
 		handleResult(socket, body);
 		break;
+	case RC_PREPARE:
+		handlePrepare(socket, body);
+		break;
+	default:
+		break;
 	}
 }
 
@@ -32,6 +37,11 @@ void RapidCalculation::start()
 
 	srand(static_cast<unsigned int>(time(0)));
 
+	sendQuestion();
+}
+
+void RapidCalculation::sendQuestion()
+{
 	m_number1 = (rand() % 90) + 10;
 	m_number2 = (rand() % 90) + 10;
 
@@ -41,6 +51,12 @@ void RapidCalculation::start()
 
 		if (session)
 		{
+			ResultInfo resultInfo;
+			resultInfo.state = CALCULATING;
+			resultInfo.result = 0;
+			resultInfo.time = 0;
+			m_resultInfos[playerId] = resultInfo;
+
 			int bufSize = 3 + 16 + 16;
 			char* buf = new char[bufSize]();
 			UINT8 eventId = RC_START;
@@ -62,18 +78,14 @@ void RapidCalculation::handleResult(SOCKET socket, const std::pair<char*, UINT16
 {
 	UINT16 calResult = *(UINT16*)body.first;
 	UINT16 time = *(UINT16*)(body.first + 2);
-	ResultInfo resultInfo;
-	resultInfo.socket = socket;
-	resultInfo.result = calResult;
-	resultInfo.time = time;
-	m_resultInfos.push_back(resultInfo);
+	m_resultInfos[socket].result = calResult;
+	m_resultInfos[socket].time = time;
+	m_resultInfos[socket].state = DONE;
 
 	bool allDone = true;
-	for (auto playerId : m_players)
+	for (auto resultInfo : m_resultInfos)
 	{
-		if (std::find_if(m_resultInfos.begin(), m_resultInfos.end(),
-			[playerId](const ResultInfo& result) { return playerId == result.socket; }) 
-			== m_resultInfos.end())
+		if (resultInfo.second.state != DONE)
 		{
 			allDone = false;
 		}
@@ -85,14 +97,14 @@ void RapidCalculation::handleResult(SOCKET socket, const std::pair<char*, UINT16
 
 		for (auto resultInfo : m_resultInfos)
 		{
-			auto player = Application::sharedInstance()->playerManager()->findPlayer(resultInfo.socket);
+			auto player = Application::sharedInstance()->playerManager()->findPlayer(resultInfo.first);
 			
 			body += player->name() + TEXT(";");
 			CString resultStr;
-			resultStr.Format(TEXT("%ud"), resultInfo.result);
+			resultStr.Format(TEXT("%ud"), resultInfo.second.result);
 			body += resultStr + TEXT(";");
 			CString timeStr;
-			timeStr.Format(TEXT("%ud"), resultInfo.time);
+			timeStr.Format(TEXT("%ud"), resultInfo.second.time);
 			body += timeStr + TEXT(";");
 		}
 
@@ -105,20 +117,31 @@ void RapidCalculation::handleResult(SOCKET socket, const std::pair<char*, UINT16
 			auto session = Application::sharedInstance()->sessionManager()->findSession(playerId);
 			if (session)
 			{
-				std::string bodyUtf8 = StringUtil::CStringToUtf8(body);
-				UINT16 bodyLength = bodyUtf8.length();
-				int bufSize = 3 + bodyLength;
-				char* buf = new char[bufSize]();
-				UINT8 eventId = RC_FINAL;
-				memcpy(buf, (char*)&eventId, 1);
-				memcpy(buf + 1, (char*)&bodyLength, 2);
-				memcpy(buf + 3, bodyUtf8.c_str(), bodyLength);
-				session->socket()->writeBuffer(buf, bufSize);
+				session->sendStringBody(RC_FINAL, body);
 			}
 			else
 			{
 				LOG_ERROR("Can not find session of player: ", playerId);
 			}	
 		}
+	}
+}
+
+void RapidCalculation::handlePrepare(SOCKET socket, const std::pair<char*, UINT16>& body)
+{
+	m_resultInfos[socket].state = PREPARED;
+
+	bool allPrepared = true;
+	for (auto resultInfo : m_resultInfos)
+	{
+		if (resultInfo.second.state != PREPARED)
+		{
+			allPrepared = false;
+		}
+	}
+
+	if (allPrepared)
+	{
+		sendQuestion();
 	}
 }

@@ -46,6 +46,9 @@ public:
 	void setDelegate(SocketReaderDelegate *delegate) { m_delegate = delegate; }
 
 private:
+	void readDone();
+
+private:
 	SOCKET m_sock;
 	State m_state;
 	char m_header[3];

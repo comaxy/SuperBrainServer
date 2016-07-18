@@ -253,7 +253,7 @@ void Session::handleChallengeFriendResponse(const std::pair<char*, UINT16>& body
 	if (friendSession == nullptr)
 	{
 		player->setState(Player::AVAILABLE);
-		LOG_ERROR(__FUNCDNAME__, " Can not find friend named ", StringUtil::CStringToMultiByte(friendPlayer->name()).c_str());
+		LOG_ERROR("Can not find friend named ", StringUtil::CStringToMultiByte(friendPlayer->name()).c_str());
 		return;
 	}
 

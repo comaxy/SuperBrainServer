@@ -52,6 +52,9 @@ enum SockEvent
 	// BODY: "Name;Result;Time;Name;Result;Time;RightResult"
 	RC_FINAL = 103,
 
+	// 准备下局游戏
+	RC_PREPARE = 104,
+
 	RAPID_CALCULATION_END = 200,
 };
 
