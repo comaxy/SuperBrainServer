@@ -43,7 +43,7 @@ enum SockEvent
 	// 100 - 200 for rapid calculation
 	RAPID_CALCULATION_BEGIN = 100,
 
-	// BODY: Number1 Number2 
+	// BODY: Number1 Number2 ¶¼ÊÇUINT16
 	RC_START = 101,
 
 	// BODY: "Result;Time"
