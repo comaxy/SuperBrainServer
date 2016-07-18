@@ -47,9 +47,7 @@ void RapidCalculation::sendQuestion()
 
 	for (auto playerId : m_players)
 	{
-		auto session = Application::sharedInstance()->sessionManager()->findSession(playerId);
-
-		if (session)
+		if (auto session = Application::sharedInstance()->sessionManager()->findSession(playerId))
 		{
 			ResultInfo resultInfo;
 			resultInfo.state = CALCULATING;
@@ -97,15 +95,20 @@ void RapidCalculation::handleResult(SOCKET socket, const std::pair<char*, UINT16
 
 		for (auto resultInfo : m_resultInfos)
 		{
-			auto player = Application::sharedInstance()->playerManager()->findPlayer(resultInfo.first);
-			
-			body += player->name() + TEXT(";");
-			CString resultStr;
-			resultStr.Format(TEXT("%ud"), resultInfo.second.result);
-			body += resultStr + TEXT(";");
-			CString timeStr;
-			timeStr.Format(TEXT("%ud"), resultInfo.second.time);
-			body += timeStr + TEXT(";");
+			if (auto player = Application::sharedInstance()->playerManager()->findPlayer(resultInfo.first))
+			{
+				body += player->name() + TEXT(";");
+				CString resultStr;
+				resultStr.Format(TEXT("%ud"), resultInfo.second.result);
+				body += resultStr + TEXT(";");
+				CString timeStr;
+				timeStr.Format(TEXT("%ud"), resultInfo.second.time);
+				body += timeStr + TEXT(";");
+			}
+			else
+			{
+				LOG_ERROR("Can not find player: ", resultInfo.first);
+			}
 		}
 
 		CString rightResultStr;
