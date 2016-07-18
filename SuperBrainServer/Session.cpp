@@ -92,19 +92,7 @@ void Session::handleRegister(const std::pair<char*, UINT16>& body)
 void Session::replyRegister(const CString& body)
 {
 	appLogger()->trace("Reply register result to socket ", m_socket->socket(), ". Body is ", body);
-	std::string bodyUtf8 = StringUtil::CStringToUtf8(body);
-	int bufSize = 3 + bodyUtf8.size();
-	char* buf = new char[bufSize]();
-	UINT8 eventId = REG_RESULT;
-	UINT16 bodyLength = bodyUtf8.size();
-	memcpy(buf, &eventId, 1);
-	memcpy(buf + 1, &bodyLength, 2);
-	memcpy(buf + 3, bodyUtf8.c_str(), bodyUtf8.size());
-	m_socket->writer()->appendWriteBuffer(buf, bufSize);
-	if (m_socket->writer()->state() == SocketWriter::READY)
-	{
-		m_socket->writer()->write();
-	}
+	sendStringBody(REG_RESULT, body);
 }
 
 void Session::handleLogin(const std::pair<char*, UINT16>& body)
@@ -148,19 +136,7 @@ void Session::handleLogin(const std::pair<char*, UINT16>& body)
 void Session::replyLogin(const CString& body)
 {
 	appLogger()->trace("Reply login result to socket ", m_socket->socket(), ". Body is ", body);
-	std::string bodyUtf8 = StringUtil::CStringToUtf8(body);
-	int bufSize = 3 + bodyUtf8.size();
-	char* buf = new char[bufSize]();
-	UINT8 eventId = LOGIN_RESULT;
-	UINT16 bodyLength = bodyUtf8.size();
-	memcpy(buf, (char*)&eventId, 1);
-	memcpy(buf + 1, (char*)&bodyLength, 2);
-	memcpy(buf + 3, bodyUtf8.c_str(), bodyUtf8.size());
-	m_socket->writer()->appendWriteBuffer(buf, bufSize);
-	if (m_socket->writer()->state() == SocketWriter::READY)
-	{
-		m_socket->writer()->write();
-	}
+	sendStringBody(LOGIN_RESULT, body);
 }
 
 void Session::handleGetPlayerList(const std::pair<char*, UINT16>& body)
@@ -177,11 +153,20 @@ void Session::handleGetPlayerList(const std::pair<char*, UINT16>& body)
 			bodyReply += player->name() + TEXT(";");
 		}
 	}
-	appLogger()->trace("Reply player list result to socket ", m_socket->socket(), ". Body is ", bodyReply);
-	std::string bodyUtf8 = StringUtil::CStringToUtf8(bodyReply);
+	appLogger()->trace("Reply player list result to socket ", m_socket->socket());
+	sendStringBody(GET_PLAYER_LIST_RESPONSE, bodyReply);
+}
+
+void Session::sendStringBody(UINT8 eventId, const CString& responseBody)
+{
+	std::string bodyUtf8 = StringUtil::CStringToUtf8(responseBody);
+	sendStringBody(eventId, bodyUtf8);
+}
+
+void Session::sendStringBody(UINT8 eventId, const std::string& bodyUtf8)
+{
 	int bufSize = 3 + bodyUtf8.size();
 	char* buf = new char[bufSize]();
-	UINT8 eventId = GET_PLAYER_LIST_RESPONSE;
 	UINT16 bodyLength = bodyUtf8.size();
 	memcpy(buf, (char*)&eventId, 1);
 	memcpy(buf + 1, (char*)&bodyLength, 2);
@@ -215,23 +200,22 @@ void Session::handleChallengeFriendRequest(const std::pair<char*, UINT16>& body)
 	appLogger()->trace("Sending challenge information to friend ", StringUtil::CStringToMultiByte(friendName).c_str());
 	// 找到对方的session，发送消息给对方
 	auto friendPlayer = Application::sharedInstance()->playerManager()->findPlayer(friendName);
+	if (friendPlayer == nullptr)
+	{
+		appLogger()->error("Can not find friend named: ", StringUtil::CStringToMultiByte(friendName).c_str());
+
+		// 返回错误信息给发送者
+		sendStringBody(CHALLENGE_FRIEND_RESPONSE, TEXT("3;无法找到对方，对方可能已经下线"));
+		return;
+	}
 	auto friendSession = Application::sharedInstance()->sessionManager()->findSession(friendPlayer->id());
 	if (friendSession == nullptr)
 	{
 		player->setState(Player::AVAILABLE);
-		appLogger()->error("Can not find friend named ", StringUtil::CStringToMultiByte(friendName).c_str());
+		appLogger()->error("Can not find session of friend named ", StringUtil::CStringToMultiByte(friendName).c_str());
 
 		// 返回错误信息给发送者
-		CString responseBody = TEXT("3;无法找到对方，对方可能已经下线");
-		std::string bodyUtf8 = StringUtil::CStringToUtf8(responseBody);
-		int bufSize = 3 + bodyUtf8.size();
-		char* buf = new char[bufSize]();
-		UINT8 eventId = CHALLENGE_FRIEND_RESPONSE;
-		UINT16 bodyLength = bodyUtf8.size();
-		memcpy(buf, (char*)&eventId, 1);
-		memcpy(buf + 1, (char*)&bodyLength, 2);
-		memcpy(buf + 3, bodyUtf8.c_str(), bodyUtf8.size());
-		m_socket->writeBuffer(buf, bufSize);
+		sendStringBody(CHALLENGE_FRIEND_RESPONSE, TEXT("3;无法找到对方，对方可能已经下线"));
 		return;
 	}
 	
@@ -244,17 +228,7 @@ void Session::handleChallengeFriendRequest(const std::pair<char*, UINT16>& body)
 	friendPlayer->setGame(game->id());
 
 	appLogger()->trace("Sending challenge data to friend soekt ", friendSession->socket());
-	CString bodyReply;
-	bodyReply = player->name() + TEXT(";") + gameName;
-	std::string bodyUtf8 = StringUtil::CStringToUtf8(bodyReply);
-	int bufSize = 3 + bodyUtf8.size();
-	char* buf = new char[bufSize]();
-	UINT8 eventId = CHALLENGE_FRIEND_REQUEST;
-	UINT16 bodyLength = bodyUtf8.size();
-	memcpy(buf, (char*)&eventId, 1);
-	memcpy(buf + 1, (char*)&bodyLength, 2);
-	memcpy(buf + 3, bodyUtf8.c_str(), bodyUtf8.size());
-	friendSession->socket()->writeBuffer(buf, bufSize);
+	sendStringBody(CHALLENGE_FRIEND_REQUEST, player->name() + TEXT(";") + gameName);
 }
 
 void Session::handleChallengeFriendResponse(const std::pair<char*, UINT16>& body)
@@ -285,14 +259,7 @@ void Session::handleChallengeFriendResponse(const std::pair<char*, UINT16>& body
 
 	appLogger()->trace("Sending challenge reply data to friend soekt ", friendSession->socket());
 	std::string bodyUtf8(body.first, body.second);
-	int bufSize = 3 + bodyUtf8.size();
-	char* buf = new char[bufSize]();
-	UINT8 eventId = CHALLENGE_FRIEND_RESPONSE;
-	UINT16 bodyLength = bodyUtf8.size();
-	memcpy(buf, (char*)&eventId, 1);
-	memcpy(buf + 1, (char*)&bodyLength, 2);
-	memcpy(buf + 3, bodyUtf8.c_str(), bodyUtf8.size());
-	friendSession->socket()->writeBuffer(buf, bufSize);
+	sendStringBody(CHALLENGE_FRIEND_RESPONSE, bodyUtf8);
 
 	// 如果同意，则开始游戏
 	CString strBody = StringUtil::Utf8ToCString(bodyUtf8);

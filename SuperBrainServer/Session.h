@@ -21,6 +21,8 @@ private:
 	void handleChallengeFriendRequest(const std::pair<char*, UINT16>& body);
 	void handleChallengeFriendResponse(const std::pair<char*, UINT16>& body);
 	void handleEventDefault(UINT8 eventId, const std::pair<char*, UINT16>& body);
+	void sendStringBody(UINT8 eventId, const CString& body);
+	void sendStringBody(UINT8 eventId, const std::string& bodyUtf8);
 
 private:
 	std::shared_ptr<Socket> m_socket;
