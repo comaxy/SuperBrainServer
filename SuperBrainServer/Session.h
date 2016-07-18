@@ -3,6 +3,7 @@
 #include "Socket.h"
 #include <atlstr.h>
 #include <memory>
+#include <string>
 
 class Session : public SocketReaderDelegate
 {

@@ -15,7 +15,7 @@ public:
 	SOCKET findFriendPlayerId(SOCKET playerId);
 	const CString& name() const { return m_name; }
 
-	virtual void start() = 0;
+	virtual void start();
 	virtual void handleEvent(SOCKET socket, UINT8 eventId, const std::pair<char*, UINT16>& body) = 0;
 
 protected:

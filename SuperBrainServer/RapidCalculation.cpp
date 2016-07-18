@@ -27,6 +27,8 @@ void RapidCalculation::handleEvent(SOCKET socket, UINT8 eventId, const std::pair
 
 void RapidCalculation::start()
 {
+	Game::start();
+
 	srand(static_cast<unsigned int>(time(0)));
 
 	m_number1 = (rand() % 90) + 10;

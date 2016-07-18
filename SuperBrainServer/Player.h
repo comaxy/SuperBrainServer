@@ -19,7 +19,7 @@ public:
 	SOCKET id() const { return m_id; }
 	const CString& name() const { return m_name; }
 
-	void setState(State state) { m_state = state; }
+	void setState(State state);
 	State state() const { return m_state; }
 
 	void setGame(const CString& gameId) { m_gameId = gameId; }

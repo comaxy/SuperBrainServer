@@ -3,6 +3,9 @@
 #include "SessionManager.h"
 #include "Session.h"
 #include "LoggerDef.h"
+#include "PlayerManager.h"
+#include "GameManager.h"
+#include "Player.h"
 
 #define WM_SOCKET (WM_USER + 1000)
 
@@ -145,6 +148,12 @@ void MainWindow::OnMsgSocketClose(SOCKET sock)
 {
 	appLogger()->trace("Handle close event on socket: ", sock);
 	Application::sharedInstance()->sessionManager()->destorySession(sock);
+	std::shared_ptr<Player> player = Application::sharedInstance()->playerManager()->findPlayer(sock);
+	if (player != nullptr)
+	{
+		Application::sharedInstance()->playerManager()->removePlayer(sock);
+		Application::sharedInstance()->gameManager()->removeGame(player->gameId());
+	}
 }
 
 bool MainWindow::OnNotifyWindowInit()

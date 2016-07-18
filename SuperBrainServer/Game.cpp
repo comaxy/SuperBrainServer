@@ -1,5 +1,8 @@
 #include "Game.h"
 #include "StringUtil.h"
+#include "PlayerManager.h"
+#include "Application.h"
+#include "Player.h"
 
 Game::Game(const CString& name) : m_name(name)
 {
@@ -26,4 +29,13 @@ SOCKET Game::findFriendPlayerId(SOCKET playerId)
 		}
 	}
 	return INVALID_SOCKET;
+}
+
+void Game::start()
+{
+	for (auto playerId : m_players)
+	{
+		auto player = Application::sharedInstance()->playerManager()->findPlayer(playerId);
+		player->setState(Player::FIGHTING);
+	}
 }
