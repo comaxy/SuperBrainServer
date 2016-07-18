@@ -6,6 +6,7 @@
 #include "StringUtil.h"
 #include "Player.h"
 #include "PlayerManager.h"
+#include "LoggerDef.h"
 #include <stdio.h>
 #include <time.h>
 #include <algorithm>
@@ -37,15 +38,23 @@ void RapidCalculation::start()
 	for (auto playerId : m_players)
 	{
 		auto session = Application::sharedInstance()->sessionManager()->findSession(playerId);
-		int bufSize = 3 + 16 + 16;
-		char* buf = new char[bufSize]();
-		UINT8 eventId = RC_START;
-		UINT16 bodyLength = 16 + 16;
-		memcpy(buf, (char*)&eventId, 1);
-		memcpy(buf + 1, (char*)&bodyLength, 2);
-		memcpy(buf + 3, (char*)&m_number1, 2);
-		memcpy(buf + 5, (char*)&m_number2, 2);
-		session->socket()->writeBuffer(buf, bufSize);
+
+		if (session)
+		{
+			int bufSize = 3 + 16 + 16;
+			char* buf = new char[bufSize]();
+			UINT8 eventId = RC_START;
+			UINT16 bodyLength = 16 + 16;
+			memcpy(buf, (char*)&eventId, 1);
+			memcpy(buf + 1, (char*)&bodyLength, 2);
+			memcpy(buf + 3, (char*)&m_number1, 2);
+			memcpy(buf + 5, (char*)&m_number2, 2);
+			session->socket()->writeBuffer(buf, bufSize);
+		}
+		else
+		{
+			LOG_ERROR("Can not find session of player: ", playerId);
+		}
 	}
 }
 
@@ -94,16 +103,22 @@ void RapidCalculation::handleResult(SOCKET socket, const std::pair<char*, UINT16
 		for (auto playerId : m_players)
 		{
 			auto session = Application::sharedInstance()->sessionManager()->findSession(playerId);
-
-			std::string bodyUtf8 = StringUtil::CStringToUtf8(body);
-			UINT16 bodyLength = bodyUtf8.length();
-			int bufSize = 3 + bodyLength;
-			char* buf = new char[bufSize]();
-			UINT8 eventId = RC_FINAL;
-			memcpy(buf, (char*)&eventId, 1);
-			memcpy(buf + 1, (char*)&bodyLength, 2);
-			memcpy(buf + 3, bodyUtf8.c_str(), bodyLength);
-			session->socket()->writeBuffer(buf, bufSize);
+			if (session)
+			{
+				std::string bodyUtf8 = StringUtil::CStringToUtf8(body);
+				UINT16 bodyLength = bodyUtf8.length();
+				int bufSize = 3 + bodyLength;
+				char* buf = new char[bufSize]();
+				UINT8 eventId = RC_FINAL;
+				memcpy(buf, (char*)&eventId, 1);
+				memcpy(buf + 1, (char*)&bodyLength, 2);
+				memcpy(buf + 3, bodyUtf8.c_str(), bodyLength);
+				session->socket()->writeBuffer(buf, bufSize);
+			}
+			else
+			{
+				LOG_ERROR("Can not find session of player: ", playerId);
+			}	
 		}
 	}
 }

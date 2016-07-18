@@ -26,9 +26,9 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		OnMsgCreate(wParam, lParam);
 		break;
 	case WM_DESTROY:
-		appLogger()->trace("Closing listen socket: ", m_hLstnSock);
+		LOG_TRACE("Closing listen socket: ", m_hLstnSock);
 		closesocket(m_hLstnSock);
-		appLogger()->trace("Listen socket:", m_hLstnSock, " has been closed.");
+		LOG_TRACE("Listen socket:", m_hLstnSock, " has been closed.");
 		WSACleanup();
 		PostQuitMessage(0);
 		break;
@@ -97,10 +97,10 @@ void MainWindow::OnMsgSocket(WPARAM wParam, LPARAM lParam)
 
 void MainWindow::OnMsgSocketAccept(SOCKET sock)
 {
-	appLogger()->trace("Handle accept event on socket: ", sock);
+	LOG_TRACE("Handle accept event on socket: ", sock);
 	if (sock != m_hLstnSock)
 	{
-		appLogger()->error("Only listen socket should accept connection. Ignore.");
+		LOG_ERROR("Only listen socket should accept connection. Ignore.");
 		return;
 	}
 
@@ -109,23 +109,23 @@ void MainWindow::OnMsgSocketAccept(SOCKET sock)
 	SOCKET newSock = accept(sock, (LPSOCKADDR)&pstName, (LPINT)&nLen);
 	if (newSock == SOCKET_ERROR)
 	{
-		appLogger()->error("Accept incoming socket failed!");
+		LOG_ERROR("Accept incoming socket failed!");
 		return;
 	}
 	else
 	{
-		appLogger()->trace("New socket accepted. Socket:", newSock);
+		LOG_TRACE("New socket accepted. Socket:", newSock);
 		Application::sharedInstance()->sessionManager()->newSession(newSock);
 	}
 }
 
 void MainWindow::OnMsgSocketRead(SOCKET sock)
 {
-	appLogger()->trace("Handle read event on socket: ", sock);
+	LOG_TRACE("Handle read event on socket: ", sock);
 	std::shared_ptr<Session> session = Application::sharedInstance()->sessionManager()->findSession(sock);
 	if (!session)
 	{
-		appLogger()->error("Can not find the session for socket ", sock, " for read.");
+		LOG_ERROR("Can not find the session for socket ", sock, " for read.");
 		return;
 	}
 
@@ -134,11 +134,11 @@ void MainWindow::OnMsgSocketRead(SOCKET sock)
 
 void MainWindow::OnMsgSocketWrite(SOCKET sock)
 {
-	appLogger()->trace("Handle write event on socket: ", sock);
+	LOG_TRACE("Handle write event on socket: ", sock);
 	std::shared_ptr<Session> session = Application::sharedInstance()->sessionManager()->findSession(sock);
 	if (!session)
 	{
-		appLogger()->error("Can not find the session for socket ", sock, " for write.");
+		LOG_ERROR("Can not find the session for socket ", sock, " for write.");
 	}
 
 	session->socket()->write();
@@ -146,7 +146,7 @@ void MainWindow::OnMsgSocketWrite(SOCKET sock)
 
 void MainWindow::OnMsgSocketClose(SOCKET sock)
 {
-	appLogger()->trace("Handle close event on socket: ", sock);
+	LOG_TRACE("Handle close event on socket: ", sock);
 	Application::sharedInstance()->sessionManager()->destorySession(sock);
 	std::shared_ptr<Player> player = Application::sharedInstance()->playerManager()->findPlayer(sock);
 	if (player != nullptr)
@@ -161,22 +161,22 @@ bool MainWindow::OnNotifyWindowInit()
 	WSADATA wsaData = { 0 };
 	if (0 != WSAStartup(MAKEWORD(2, 2), &wsaData))
 	{
-		appLogger()->fatal("WSAStartup failed!");
+		LOG_FATAL("WSAStartup failed!");
 		return false;
 	}
 
 	SOCKET hLstnSock = socket(AF_INET, SOCK_STREAM, 0);
 	if (hLstnSock == INVALID_SOCKET)
 	{
-		appLogger()->fatal("Create listen socket failed!");
+		LOG_FATAL("Create listen socket failed!");
 		return false;
 	}
 
-	appLogger()->trace("Create listen socket succeeded! Socket: ", hLstnSock);
+	LOG_TRACE("Create listen socket succeeded! Socket: ", hLstnSock);
 
 	if (SOCKET_ERROR == WSAAsyncSelect(hLstnSock, m_hWnd, WM_SOCKET, FD_ACCEPT | FD_READ | FD_WRITE | FD_CLOSE))
 	{
-		appLogger()->fatal("WSAAsyncSelect failed!");
+		LOG_FATAL("WSAAsyncSelect failed!");
 		return false;
 	}
 
@@ -185,13 +185,13 @@ bool MainWindow::OnNotifyWindowInit()
 	pstSockName.sin_port = htons(7062);
 	if (SOCKET_ERROR == bind(hLstnSock, (LPSOCKADDR)&pstSockName, sizeof(pstSockName)))
 	{
-		appLogger()->fatal("Bind listen socket failed!");
+		LOG_FATAL("Bind listen socket failed!");
 		return false;
 	}
 
 	if (SOCKET_ERROR == listen(hLstnSock, 5))
 	{
-		appLogger()->fatal("Listen on listen socket failed!");
+		LOG_FATAL("Listen on listen socket failed!");
 		return false;
 	}
 

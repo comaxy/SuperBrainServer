@@ -5,7 +5,7 @@
 
 bool DuiManager::initialize(HINSTANCE hInstance)
 {
-	appLogger()->trace("Initializing DUI manager.");
+	LOG_TRACE("Initializing DUI manager.");
 
 	// 设置资源路径
 	DuiLib::CPaintManagerUI::SetInstance(hInstance);
@@ -14,14 +14,14 @@ bool DuiManager::initialize(HINSTANCE hInstance)
 	CString resourcePath = exeFilePath.Left(exeFilePath.ReverseFind(TEXT('\\')) + 1) + TEXT("skin\\");
 	DuiLib::CPaintManagerUI::SetResourcePath(static_cast<LPCTSTR>(resourcePath));
 
-	appLogger()->trace("Initialize DUI manager done.");
+	LOG_TRACE("Initialize DUI manager done.");
 
 	return true;
 }
 
 void DuiManager::uninitialize()
 {
-	appLogger()->trace("Uninitializing DUI manager.");
+	LOG_TRACE("Uninitializing DUI manager.");
 
-	appLogger()->trace("Uninitialie DUI manager done.");
+	LOG_TRACE("Uninitialie DUI manager done.");
 }

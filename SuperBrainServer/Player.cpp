@@ -7,6 +7,6 @@ void Player::setState(State state)
 	if (m_state != state)
 	{
 		m_state = state;
-		appLogger()->trace("Player ", m_id, " change state to ", state);
+		LOG_TRACE("Player ", m_id, " change state to ", state);
 	}
 }

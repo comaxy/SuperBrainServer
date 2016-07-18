@@ -53,16 +53,16 @@ void Session::handleRegister(const std::pair<char*, UINT16>& body)
 	CString playerName = playerInfo.Left(seperatorPos);
 	CString password = playerInfo.Mid(seperatorPos + 1);
 	std::string playerNameMb = StringUtil::CStringToMultiByte(playerName);
-	appLogger()->trace("Handle socket ", m_socket->socket(), " register event. ",
+	LOG_TRACE("Handle socket ", m_socket->socket(), " register event. ",
 		"Player name: ", playerNameMb.c_str());
 	if (playerName.IsEmpty())
 	{
-		appLogger()->trace("Error: Player name for register is empty! Socket: ", m_socket->socket());
+		LOG_TRACE("Error: Player name for register is empty! Socket: ", m_socket->socket());
 		return;
 	}
 	if (password.IsEmpty())
 	{
-		appLogger()->trace("Error: Player password for register is empty! Socket: ", m_socket->socket());
+		LOG_TRACE("Error: Player password for register is empty! Socket: ", m_socket->socket());
 		return;
 	}
 
@@ -72,7 +72,7 @@ void Session::handleRegister(const std::pair<char*, UINT16>& body)
 	query->exec();
 	if (query->next())
 	{
-		appLogger()->trace("Register failed! Player named ", playerNameMb.c_str(), " has already exists. Socket: ", m_socket->socket());
+		LOG_TRACE("Register failed! Player named ", playerNameMb.c_str(), " has already exists. Socket: ", m_socket->socket());
 		replyRegister(TEXT("2;用户名已经存在！"));
 	}
 	else
@@ -81,7 +81,7 @@ void Session::handleRegister(const std::pair<char*, UINT16>& body)
 		query->bindValue(TEXT(":name"), playerName);
 		query->bindValue(TEXT(":password"), password);
 		query->exec();
-		appLogger()->trace("Register succeeded! Socket: ", m_socket->socket());
+		LOG_TRACE("Register succeeded! Socket: ", m_socket->socket());
 		replyRegister(TEXT("1;OK"));
 
 		auto player = Application::sharedInstance()->playerManager()->newPlayer(m_socket->socket(), playerName);
@@ -91,7 +91,7 @@ void Session::handleRegister(const std::pair<char*, UINT16>& body)
 
 void Session::replyRegister(const CString& body)
 {
-	appLogger()->trace("Reply register result to socket ", m_socket->socket(), ". Body is ", body);
+	LOG_TRACE("Reply register result to socket ", m_socket->socket(), ". Body is ", body);
 	sendStringBody(REG_RESULT, body);
 }
 
@@ -103,17 +103,17 @@ void Session::handleLogin(const std::pair<char*, UINT16>& body)
 	CString playerName = playerInfo.Left(seperatorPos);
 	CString password = playerInfo.Mid(seperatorPos + 1);
 	std::string playerNameMb = StringUtil::CStringToMultiByte(playerName);
-	appLogger()->trace("Handle socket ", m_socket->socket(), " login event. ",
+	LOG_TRACE("Handle socket ", m_socket->socket(), " login event. ",
 		"Player name: ", playerNameMb.c_str());
 	if (playerName.IsEmpty())
 	{
-		appLogger()->trace("Error: Player name for login is empty! Socket: ", m_socket->socket());
+		LOG_TRACE("Error: Player name for login is empty! Socket: ", m_socket->socket());
 		replyLogin(TEXT("2;用户名不能为空！"));
 		return;
 	}
 	if (password.IsEmpty())
 	{
-		appLogger()->trace("Error: Player password for login is empty! Socket: ", m_socket->socket());
+		LOG_TRACE("Error: Player password for login is empty! Socket: ", m_socket->socket());
 		replyLogin(TEXT("2;密码不能为空！"));
 		return;
 	}
@@ -123,25 +123,25 @@ void Session::handleLogin(const std::pair<char*, UINT16>& body)
 	query->exec();
 	if (!query->next())
 	{
-		appLogger()->trace("Error: Player named:", playerNameMb.c_str(), " not exists in DB! Socket: ", m_socket->socket());
+		LOG_TRACE("Error: Player named:", playerNameMb.c_str(), " not exists in DB! Socket: ", m_socket->socket());
 		replyLogin(TEXT("2;用户名或密码错误！"));
 		return;
 	}
 	auto player = Application::sharedInstance()->playerManager()->newPlayer(m_socket->socket(), playerName);
 	player->setState(Player::AVAILABLE);
-	appLogger()->trace("Player named: ", playerNameMb.c_str(), " login succeeded! Associated socket is ", m_socket->socket());
+	LOG_TRACE("Player named: ", playerNameMb.c_str(), " login succeeded! Associated socket is ", m_socket->socket());
 	replyLogin(TEXT("1;OK"));
 }
 
 void Session::replyLogin(const CString& body)
 {
-	appLogger()->trace("Reply login result to socket ", m_socket->socket(), ". Body is ", body);
+	LOG_TRACE("Reply login result to socket ", m_socket->socket(), ". Body is ", body);
 	sendStringBody(LOGIN_RESULT, body);
 }
 
 void Session::handleGetPlayerList(const std::pair<char*, UINT16>& body)
 {
-	appLogger()->trace("Handle socket ", m_socket->socket(), " get player list request. ");
+	LOG_TRACE("Handle socket ", m_socket->socket(), " get player list request. ");
 	auto allSession = Application::sharedInstance()->sessionManager()->allSessions();
 	CString bodyReply;
 	auto self = Application::sharedInstance()->playerManager()->findPlayer(m_socket->socket());
@@ -153,7 +153,7 @@ void Session::handleGetPlayerList(const std::pair<char*, UINT16>& body)
 			bodyReply += player->name() + TEXT(";");
 		}
 	}
-	appLogger()->trace("Reply player list result to socket ", m_socket->socket());
+	LOG_TRACE("Reply player list result to socket ", m_socket->socket());
 	sendStringBody(GET_PLAYER_LIST_RESPONSE, bodyReply);
 }
 
@@ -176,11 +176,11 @@ void Session::sendStringBody(UINT8 eventId, const std::string& bodyUtf8)
 
 void Session::handleChallengeFriendRequest(const std::pair<char*, UINT16>& body)
 {
-	appLogger()->trace("Handle socket ", m_socket->socket(), " challenge friend request.");
+	LOG_TRACE("Handle socket ", m_socket->socket(), " challenge friend request.");
 	auto player = Application::sharedInstance()->playerManager()->findPlayer(m_socket->socket());
 	if (player->state() == Player::COMMUNICATING)
 	{
-		appLogger()->error("Can not challenge friend from socket: ", m_socket->socket(),
+		LOG_ERROR("Can not challenge friend from socket: ", m_socket->socket(),
 			". The socket is communicating with another friend.");
 		return;
 	}
@@ -194,15 +194,15 @@ void Session::handleChallengeFriendRequest(const std::pair<char*, UINT16>& body)
 	int seperatorPos = challengeInfo.Find(TEXT(';'));
 	CString friendName = challengeInfo.Left(seperatorPos);
 	CString gameName = challengeInfo.Mid(seperatorPos + 1);
-	appLogger()->trace("Friend name is: ", StringUtil::CStringToMultiByte(friendName).c_str(),
+	LOG_TRACE("Friend name is: ", StringUtil::CStringToMultiByte(friendName).c_str(),
 		"Game name is :", StringUtil::CStringToMultiByte(gameName).c_str());
 
-	appLogger()->trace("Sending challenge information to friend ", StringUtil::CStringToMultiByte(friendName).c_str());
+	LOG_TRACE("Sending challenge information to friend ", StringUtil::CStringToMultiByte(friendName).c_str());
 	// 找到对方的session，发送消息给对方
 	auto friendPlayer = Application::sharedInstance()->playerManager()->findPlayer(friendName);
 	if (friendPlayer == nullptr)
 	{
-		appLogger()->error("Can not find friend named: ", StringUtil::CStringToMultiByte(friendName).c_str());
+		LOG_ERROR("Can not find friend named: ", StringUtil::CStringToMultiByte(friendName).c_str());
 
 		// 返回错误信息给发送者
 		sendStringBody(CHALLENGE_FRIEND_RESPONSE, TEXT("3;无法找到对方，对方可能已经下线"));
@@ -212,7 +212,7 @@ void Session::handleChallengeFriendRequest(const std::pair<char*, UINT16>& body)
 	if (friendSession == nullptr)
 	{
 		player->setState(Player::AVAILABLE);
-		appLogger()->error("Can not find session of friend named ", StringUtil::CStringToMultiByte(friendName).c_str());
+		LOG_ERROR("Can not find session of friend named ", StringUtil::CStringToMultiByte(friendName).c_str());
 
 		// 返回错误信息给发送者
 		sendStringBody(CHALLENGE_FRIEND_RESPONSE, TEXT("3;无法找到对方，对方可能已经下线"));
@@ -227,7 +227,7 @@ void Session::handleChallengeFriendRequest(const std::pair<char*, UINT16>& body)
 	player->setGame(game->id());
 	friendPlayer->setGame(game->id());
 
-	appLogger()->trace("Sending challenge data to friend soekt ", friendSession->socket());
+	LOG_TRACE("Sending challenge data to friend soekt ", friendSession->socket());
 	sendStringBody(CHALLENGE_FRIEND_REQUEST, player->name() + TEXT(";") + gameName);
 }
 
@@ -236,10 +236,10 @@ void Session::handleChallengeFriendResponse(const std::pair<char*, UINT16>& body
 	auto player = Application::sharedInstance()->playerManager()->findPlayer(m_socket->socket());
 	auto game = Application::sharedInstance()->gameManager()->findGame(player->gameId());
 
-	appLogger()->trace("Handle socket ", m_socket->socket(), " challenge friend response.");
+	LOG_TRACE("Handle socket ", m_socket->socket(), " challenge friend response.");
 	if (player->state() != Player::COMMUNICATING)
 	{
-		appLogger()->error("Can not reply challenge friend from socket: ", m_socket->socket(),
+		LOG_ERROR("Can not reply challenge friend from socket: ", m_socket->socket(),
 			". The socket is not in communicating state.");
 		return;
 	}
@@ -247,17 +247,17 @@ void Session::handleChallengeFriendResponse(const std::pair<char*, UINT16>& body
 	auto friendPlayerId = game->findFriendPlayerId(m_socket->socket());
 	auto friendPlayer = Application::sharedInstance()->playerManager()->findPlayer(friendPlayerId);
 	
-	appLogger()->trace("Sending challenge reply information to friend ", StringUtil::CStringToMultiByte(friendPlayer->name()).c_str());
+	LOG_TRACE("Sending challenge reply information to friend ", StringUtil::CStringToMultiByte(friendPlayer->name()).c_str());
 	// 找到对方的session，发送消息给对方
 	auto friendSession = Application::sharedInstance()->sessionManager()->findSession(friendPlayerId);
 	if (friendSession == nullptr)
 	{
 		player->setState(Player::AVAILABLE);
-		appLogger()->error("Can not find friend named ", StringUtil::CStringToMultiByte(friendPlayer->name()).c_str());
+		LOG_ERROR(__FUNCDNAME__, " Can not find friend named ", StringUtil::CStringToMultiByte(friendPlayer->name()).c_str());
 		return;
 	}
 
-	appLogger()->trace("Sending challenge reply data to friend soekt ", friendSession->socket());
+	LOG_TRACE("Sending challenge reply data to friend soekt ", friendSession->socket());
 	std::string bodyUtf8(body.first, body.second);
 	sendStringBody(CHALLENGE_FRIEND_RESPONSE, bodyUtf8);
 

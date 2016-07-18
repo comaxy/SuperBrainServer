@@ -34,30 +34,29 @@ bool Application::initialize()
 	{
 		return false;
 	}
-
-	appLogger()->trace("=========== SUPER BRAIN SERVER ===========");
-	appLogger()->trace("Initializing application.");
+	LOG_TRACE("=========== SUPER BRAIN SERVER ===========");
+	LOG_TRACE("Initializing application.");
 
 	if (!m_duiManager->initialize(m_hInstance))
 	{
-		appLogger()->fatal("Initialize DUI manager failed!");
+		LOG_FATAL("Initialize DUI manager failed!");
 		return false;
 	}
 
 	if (!m_dbManager->initialize())
 	{
-		appLogger()->fatal("Initialize DB manager failed!");
+		LOG_FATAL("Initialize DB manager failed!");
 		return false;
 	}
 
-	appLogger()->trace("Initialize application done.");
+	LOG_TRACE("Initialize application done.");
 
 	return true;
 }
 
 bool Application::run()
 {
-	appLogger()->trace("Application start to run.");
+	LOG_TRACE("Application start to run.");
 
 	MSG msg = { 0 };
 	BOOL bRet;
@@ -74,21 +73,21 @@ bool Application::run()
 		}
 	}
 
-	appLogger()->trace("Application stopped.");
+	LOG_TRACE("Application stopped.");
 
 	return true;
 }
 
 void Application::uninitialize()
 {
-	appLogger()->trace("Uninitializing application.");
+	LOG_TRACE("Uninitializing application.");
 
 	m_dbManager->uninitialize();
 	m_dbManager.reset();
 	m_duiManager->uninitialize();
 	m_duiManager.reset();
 
-	appLogger()->trace("Uninitialize application done.");
+	LOG_TRACE("Uninitialize application done.");
 
 	m_logger->uninitialize();
 	m_logger.reset();
